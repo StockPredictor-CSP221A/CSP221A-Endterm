@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.venv*/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Node / frontend
+node_modules/
+dist/
+*.local
+
+# Data and experiments output
+data/
+*.parquet
+*.csv
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+
+# Internal handoff doc
+stock_predictor_handoff.md
