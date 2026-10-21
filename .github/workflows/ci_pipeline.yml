@@ -1,8 +1,6 @@
 name: PR Pipeline
 
 on:
-  # Trigger the workflow on push or pull request,
-  # but only for the main branch
   push:
     branches:
       - main
@@ -24,12 +22,8 @@ jobs:
         with:
           node-version: 24
 
-      # ESLint and Prettier must be in `package.json`
       - name: Install Node.js dependencies
-        run: npm ci
+        run: ci --prefix ./frontend
 
-      - name: Run linters
-        uses: wearerequired/lint-action@v3
-        with:
-          eslint: true
-          prettier: true
+      - name: Run linter
+        run: npm run lint
