@@ -23,7 +23,7 @@ jobs:
           node-version: 24
 
       - name: Install Node.js dependencies
-        run: ci --prefix ./frontend
+        run: npm ci --prefix ./frontend
 
       - name: Run linter
         run: npm run lint
