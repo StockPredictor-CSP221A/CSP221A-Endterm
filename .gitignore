@@ -22,6 +22,8 @@ dist/
 data/
 *.parquet
 *.csv
+# Keep the required benchmark artifacts (metrics + raw predictions)
+!experiments/results/**/*.csv
 
 # OS / editor
 .DS_Store

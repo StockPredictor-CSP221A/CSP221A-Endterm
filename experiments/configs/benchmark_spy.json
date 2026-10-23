@@ -1,0 +1,112 @@
+{
+  "benchmark_id": "spy_2015_2025",
+  "asset": "SPY",
+  "asset_role": "Safe / low volatility (locked benchmark asset)",
+  "data": {
+    "provider": "yfinance",
+    "symbol": "SPY",
+    "interval": "1d",
+    "auto_adjust": false,
+    "actions": false,
+    "price_column": "Close",
+    "start": "2015-01-02",
+    "end": "2025-12-31",
+    "download_start": "2015-01-01",
+    "download_end_exclusive": "2026-01-01"
+  },
+  "splits": {
+    "train": {"start": "2015-01-02", "end": "2023-12-29", "expected_rows": 2264},
+    "validation": {"start": "2024-01-02", "end": "2024-12-31", "expected_rows": 252},
+    "test": {"start": "2025-01-02", "end": "2025-12-31", "expected_rows": 250}
+  },
+  "protocol": {
+    "target": "next trading day's unadjusted close",
+    "horizon": 1,
+    "context_length": 1024,
+    "forecast_statistic": "median",
+    "quantile": 0.5,
+    "warmup_forecasts": 3,
+    "device": "cpu",
+    "dtype": "float32",
+    "torch_threads": 8,
+    "cross_learning": false,
+    "covariates": false,
+    "fine_tuning": false,
+    "training_regime": "zero_shot"
+  },
+  "feature_definitions": {
+    "target": "y_t = SPY unadjusted Close_t",
+    "input": "[y_{t-1024}, ..., y_{t-1}], chronological trading days, no gaps filled",
+    "exogenous_features": "none",
+    "returns_or_indicators": "none",
+    "future_covariates": "none",
+    "scaling": "none at dataset level; foundation models scale internally"
+  },
+  "metrics": {
+    "primary": ["MAE", "RMSE"],
+    "secondary": ["nMAE", "nRMSE", "directional_accuracy"],
+    "normalization": "divide by mean close of the evaluated split",
+    "directional_accuracy": "sign(pred - previous_close) == sign(actual - previous_close)",
+    "bootstrap": {"method": "moving-block", "repetitions": 2000, "block_length": 6, "seed": 42, "confidence": 0.95}
+  },
+  "selection_rule": "lowest test MAE; RMSE, inference time, and memory are tie-breakers",
+  "models": {
+    "chronos2": {
+      "display_name": "Amazon Chronos-2",
+      "checkpoint": "amazon/chronos-2",
+      "revision": "29ec3766d36d6f73f0696f85560a422f50e8498c",
+      "library": "chronos-forecasting",
+      "library_version": "2.3.2",
+      "parameters": "120M",
+      "training_regime": "zero_shot",
+      "hyperparameters": {
+        "context_length": 1024,
+        "prediction_length": 1,
+        "quantile_levels": [0.5],
+        "batch_size": 1,
+        "cross_learning": false,
+        "covariates": false,
+        "fine_tuning": false,
+        "device": "cpu",
+        "dtype": "float32",
+        "torch_threads": 8
+      }
+    },
+    "timesfm": {
+      "display_name": "Google TimesFM 2.5",
+      "checkpoint": "google/timesfm-2.5-200m-pytorch",
+      "revision": "1d952420fba87f3c6dee4f240de0f1a0fbc790e3",
+      "library": "timesfm",
+      "library_version": "3.0.2",
+      "parameters": "200M",
+      "training_regime": "zero_shot",
+      "hyperparameters": {
+        "max_context": 1024,
+        "horizon": 1,
+        "forecast_statistic": "median",
+        "normalize_inputs": true,
+        "use_continuous_quantile_head": true,
+        "force_flip_invariance": true,
+        "infer_is_positive": true,
+        "fix_quantile_crossing": true,
+        "per_core_batch_size": 1,
+        "torch_compile": false,
+        "device": "cpu",
+        "dtype": "float32",
+        "torch_threads": 8
+      }
+    },
+    "naive": {
+      "display_name": "Naive previous-close baseline",
+      "checkpoint": "none",
+      "revision": "none",
+      "library": "none",
+      "library_version": "none",
+      "parameters": 0,
+      "training_regime": "parameter_free",
+      "hyperparameters": {
+        "prediction": "prediction(t) = Close(t-1)"
+      }
+    }
+  }
+}
