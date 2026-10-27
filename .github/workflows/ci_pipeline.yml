@@ -6,22 +6,29 @@ on:
       - main
   pull_request:
     branches:
-      - main
+      - dev
 
 jobs:
-  run-linters:
-    name: Run linters
+  install:
+    name: Installation
     runs-on: ubuntu-latest
 
     steps:
-      - name: Check out Git repository
-        uses: actions/checkout@v7
+    - name: Check out Git repository
+      uses: actions/checkout@v7
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version: 24
+    - name: Set up Node.js
+      uses: actions/setup-node@v7
+      with:
+        node-version: 24
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
 
+  run-linters:
+    name: Run Linters
+    runs-on: ubuntu-latest
+
+    steps:
       - name: Install Node.js dependencies
         run: npm ci --prefix ./frontend
 
