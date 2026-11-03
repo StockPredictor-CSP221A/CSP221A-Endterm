@@ -10,8 +10,10 @@ import { Button } from '@/components/ui/button'
 import { useHistories } from '@/hooks/useStocks'
 import { useWatchlist } from '@/hooks/useWatchlist'
 import { errorText } from '@/services/api'
+import { usePageTitle } from '@/hooks/usePageTitle'
 
 export function WatchlistPage() {
+  usePageTitle('Watchlist')
   const watchlist = useWatchlist()
   const entries = watchlist.data ?? []
   const histories = useHistories(

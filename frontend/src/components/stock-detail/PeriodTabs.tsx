@@ -14,7 +14,7 @@ export function PeriodTabs({ value, onChange }: PeriodTabsProps) {
           <TabsTrigger
             key={period.value}
             value={period.value}
-            className="px-3 text-xs data-[state=active]:text-brand"
+            className="px-3 text-xs"
           >
             {period.label}
           </TabsTrigger>

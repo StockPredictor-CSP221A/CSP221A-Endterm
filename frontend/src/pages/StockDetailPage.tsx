@@ -21,10 +21,12 @@ import { useForecast } from '@/hooks/useForecast'
 import { useStockHistory, useStocks } from '@/hooks/useStocks'
 import { summarizeHistory } from '@/lib/history'
 import { errorText } from '@/services/api'
+import { usePageTitle } from '@/hooks/usePageTitle'
 
 export function StockDetailPage() {
   const { symbol } = useParams()
   const normalized = symbol?.toUpperCase()
+  usePageTitle(isStockSymbol(normalized) ? normalized : 'Unsupported symbol')
 
   if (!isStockSymbol(normalized)) {
     return (

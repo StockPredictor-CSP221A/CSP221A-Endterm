@@ -22,6 +22,7 @@ import { Input } from '@/components/ui/input'
 import { useAuth } from '@/hooks/useAuth'
 import { redirectTarget } from '@/lib/redirect'
 import { errorText } from '@/services/api'
+import { usePageTitle } from '@/hooks/usePageTitle'
 
 const schema = z.object({
   email: z.email('Enter a valid email address').trim(),
@@ -31,6 +32,7 @@ const schema = z.object({
 type Values = z.infer<typeof schema>
 
 export function SignInPage() {
+  usePageTitle('Sign in')
   const { login } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()

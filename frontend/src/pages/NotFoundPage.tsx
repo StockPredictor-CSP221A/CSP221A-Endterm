@@ -3,8 +3,10 @@ import { Link } from 'react-router-dom'
 
 import { Wordmark } from '@/components/layout/Wordmark'
 import { Button } from '@/components/ui/button'
+import { usePageTitle } from '@/hooks/usePageTitle'
 
 export function NotFoundPage() {
+  usePageTitle('Page not found')
   return (
     <div className="flex min-h-svh flex-col px-4 py-6 sm:px-8">
       <Wordmark />

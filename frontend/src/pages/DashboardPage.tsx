@@ -10,6 +10,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { useHistories, useStocks } from '@/hooks/useStocks'
 import { summarizeHistory } from '@/lib/history'
 import { errorText } from '@/services/api'
+import { usePageTitle } from '@/hooks/usePageTitle'
 
 const SPARKLINE_PERIOD = '1mo'
 
@@ -21,6 +22,7 @@ function greeting(date = new Date()): string {
 }
 
 export function DashboardPage() {
+  usePageTitle('Dashboard')
   const { user } = useAuth()
   const stocks = useStocks()
   const symbols = stocks.data?.map((stock) => stock.symbol) ?? []

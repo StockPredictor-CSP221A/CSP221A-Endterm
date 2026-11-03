@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom'
 import { RoleBadge } from '@/components/stocks/RoleBadge'
 import { Button } from '@/components/ui/button'
 import {
+  Command,
   CommandDialog,
   CommandEmpty,
   CommandGroup,
@@ -58,33 +59,35 @@ export function CommandMenu() {
         title="Search stocks"
         description="Jump to SPY, NVDA, or KO, or to a page."
       >
-        <CommandInput placeholder="Search SPY, NVDA, KO…" />
-        <CommandList>
-          <CommandEmpty>Only SPY, NVDA, and KO are supported.</CommandEmpty>
-          <CommandGroup heading="Stocks">
-            {STOCKS.map((stock) => (
-              <CommandItem
-                key={stock.symbol}
-                value={`${stock.symbol} ${stock.name} ${stock.role}`}
-                onSelect={() => go(`/stocks/${stock.symbol}`)}
-                className="gap-3 py-2"
-              >
-                <span className="w-12 font-semibold">{stock.symbol}</span>
-                <span className="flex-1 truncate text-muted-foreground">{stock.name}</span>
-                <RoleBadge role={stock.role} />
-              </CommandItem>
-            ))}
-          </CommandGroup>
-          <CommandSeparator />
-          <CommandGroup heading="Pages">
-            {NAV_ITEMS.map((item) => (
-              <CommandItem key={item.to} value={item.label} onSelect={() => go(item.to)}>
-                <item.icon aria-hidden />
-                {item.label}
-              </CommandItem>
-            ))}
-          </CommandGroup>
-        </CommandList>
+        <Command>
+          <CommandInput placeholder="Search SPY, NVDA, KO…" />
+          <CommandList>
+            <CommandEmpty>Only SPY, NVDA, and KO are supported.</CommandEmpty>
+            <CommandGroup heading="Stocks">
+              {STOCKS.map((stock) => (
+                <CommandItem
+                  key={stock.symbol}
+                  value={`${stock.symbol} ${stock.name}`}
+                  onSelect={() => go(`/stocks/${stock.symbol}`)}
+                  className="gap-3 py-2"
+                >
+                  <span className="w-12 font-semibold">{stock.symbol}</span>
+                  <span className="flex-1 truncate text-muted-foreground">{stock.name}</span>
+                  <RoleBadge role={stock.role} />
+                </CommandItem>
+              ))}
+            </CommandGroup>
+            <CommandSeparator />
+            <CommandGroup heading="Pages">
+              {NAV_ITEMS.map((item) => (
+                <CommandItem key={item.to} value={item.label} onSelect={() => go(item.to)}>
+                  <item.icon aria-hidden />
+                  {item.label}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
       </CommandDialog>
     </>
   )

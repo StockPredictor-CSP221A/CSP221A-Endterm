@@ -12,11 +12,13 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { STOCK_SYMBOLS, isStockSymbol } from '@/data/stocks'
 import { usePredictions } from '@/hooks/usePredictions'
 import { errorText } from '@/services/api'
+import { usePageTitle } from '@/hooks/usePageTitle'
 
 const ALL = 'all'
 const LIMIT = 100
 
 export function HistoryPage() {
+  usePageTitle('Forecast history')
   const [searchParams, setSearchParams] = useSearchParams()
   const param = searchParams.get('symbol')?.toUpperCase()
   const symbol = isStockSymbol(param) ? param : undefined
@@ -38,14 +40,14 @@ export function HistoryPage() {
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4">
           <Tabs value={symbol ?? ALL} onValueChange={setFilter}>
             <TabsList aria-label="Filter by symbol" className="h-9">
-              <TabsTrigger value={ALL} className="px-3 text-xs data-[state=active]:text-brand">
+              <TabsTrigger value={ALL} className="px-3 text-xs">
                 All
               </TabsTrigger>
               {STOCK_SYMBOLS.map((item) => (
                 <TabsTrigger
                   key={item}
                   value={item}
-                  className="px-3 text-xs data-[state=active]:text-brand"
+                  className="px-3 text-xs"
                 >
                   {item}
                 </TabsTrigger>

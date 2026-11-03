@@ -1,9 +1,3 @@
-export interface HealthResponse {
-  status: string
-  service: string
-  version: string
-}
-
 export type StockRole = 'Safe' | 'Volatile' | 'Defensive'
 
 export interface StockInfo {

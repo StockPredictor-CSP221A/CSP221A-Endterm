@@ -1,10 +1,13 @@
 # Stock Predictor
 
-A stock-tracking web app with an ML-powered next-day closing-price forecast for
-`SPY`, `NVDA`, and `KO`.
+A stock-tracking web app with a next-day closing-price forecast from Google
+TimesFM 2.5 for `SPY`, `NVDA`, and `KO`. Users sign in with email and password to
+run forecasts, keep a forecast history, and maintain a watchlist.
 
-- **Frontend:** React + TypeScript + Vite, Tailwind CSS, Recharts
-- **Backend:** Python + FastAPI, Pydantic, SQLAlchemy 2 (PostgreSQL), Alembic
+- **Frontend:** React 19 + TypeScript + Vite, Tailwind CSS v4, shadcn/ui,
+  React Router, TanStack Query, Recharts
+- **Backend:** Python + FastAPI, Pydantic, SQLAlchemy 2 (PostgreSQL), Alembic,
+  JWT bearer auth with Argon2 password hashes
 - **Market data:** `yfinance`
 - **Model:** Google TimesFM 2.5 (live); benchmarked against Chronos-2 and a naive
   baseline; see the benchmark section below
@@ -34,18 +37,34 @@ uv run uvicorn app.main:app --reload
 - Tests: `uv run pytest`
 - Lint: `uv run ruff check .`
 
-Endpoints so far:
+Endpoints (all JSON; errors use FastAPI's `{"detail": ...}`):
 
-| Method | Path | Notes |
-| --- | --- | --- |
-| GET | `/api/health` | liveness/version |
-| GET | `/api/health/db` | checks the configured PostgreSQL (Neon) connection |
-| GET | `/api/stocks/{symbol}/history?period=1y` | real daily closes via yfinance |
-| POST | `/api/stocks/{symbol}/predict` | TimesFM one-day forecast; persists to `predictions` |
+| Method | Path | Auth | Notes |
+| --- | --- | --- | --- |
+| GET | `/api/health` | public | liveness/version |
+| GET | `/api/health/db` | public | checks the configured PostgreSQL (Neon) connection |
+| POST | `/api/auth/register` | public | `{email, password, display_name?}`; `409` on duplicate email |
+| POST | `/api/auth/login` | public | `{email, password}`; `401` on bad credentials |
+| GET | `/api/auth/me` | bearer | current user |
+| POST | `/api/auth/logout` | public | `204`; tokens are stateless |
+| GET | `/api/stocks` | bearer | the fixed SPY/NVDA/KO universe |
+| GET | `/api/stocks/{symbol}/history?period=1y` | bearer | daily closes via yfinance |
+| POST | `/api/stocks/{symbol}/predict` | bearer | TimesFM one-day forecast, saved for the user |
+| GET | `/api/stocks/{symbol}/news?limit=4` | bearer | yfinance headlines; `[]` when unavailable |
+| GET | `/api/predictions?symbol=&limit=20` | bearer | the user's saved forecasts, newest first |
+| GET | `/api/watchlist` | bearer | the user's watched symbols |
+| POST / DELETE | `/api/watchlist/{symbol}` | bearer | idempotent add / remove |
 
-Migrations: `uv run alembic upgrade head` (requires a reachable PostgreSQL). The
-initial `predictions` migration is already committed; generate new ones with
-`uv run alembic revision --autogenerate -m "..."`.
+Symbols outside `SPY`, `NVDA`, `KO` return `404`; missing or invalid tokens
+return `401`; provider/model failures `502`; database failures `503`.
+
+Environment (`backend/.env.example`): `DATABASE_URL`, `CORS_ORIGINS`,
+`JWT_SECRET` (required for any shared deployment), `JWT_ALGORITHM` (`HS256`),
+`ACCESS_TOKEN_EXPIRE_MINUTES` (`10080`, 7 days).
+
+Migrations: `uv run alembic upgrade head` (requires a reachable PostgreSQL).
+`0001` predictions, `0002` users, `0003` `predictions.user_id` (nullable,
+existing rows kept), `0004` watchlist items.
 
 ## Frontend
 
@@ -59,10 +78,19 @@ Runs at http://localhost:5173 and proxies `/api` to the backend on port 8000.
 For a deployed backend, set `VITE_API_BASE=https://<backend-host>/api` (see
 `frontend/.env.example`).
 
-The UI is limited to `SPY`, `NVDA`, and `KO`. It loads 1M/6M/1Y/5Y history,
-shows the latest close/date, runs the TimesFM forecast with idle/loading/success/
-error states, draws the forecast as a dashed segment, and shows the SPY
-benchmark table with the shipped-model trade-off.
+Routes:
+
+| Path | Page |
+| --- | --- |
+| `/sign-in`, `/sign-up` | split-screen auth forms (signed-in users are redirected) |
+| `/` | dashboard: market snapshot, three stock cards, recent forecasts, watchlist, model performance, headlines |
+| `/stocks/:symbol` | price chart (1M–5Y), stats, forecast card, symbol history and headlines |
+| `/watchlist` | starred stocks |
+| `/history` | all saved forecasts with a symbol filter |
+
+Every app route requires sign-in; unauthenticated visitors go to `/sign-in` and
+return to the page they asked for. The UI is limited to `SPY`, `NVDA`, and `KO`
+and keeps the SPY benchmark with the naive-vs-TimesFM trade-off visible.
 
 ## Deployment (live, free tier)
 
@@ -73,11 +101,12 @@ benchmark table with the shipped-model trade-off.
 | Database | Neon Free | pooled PostgreSQL |
 
 ```bash
-# Live checks
-curl https://mikledez--stock-predictor-api-fastapi-app.us-east.modal.run/api/health
-curl https://mikledez--stock-predictor-api-fastapi-app.us-east.modal.run/api/health/db
-curl "https://mikledez--stock-predictor-api-fastapi-app.us-east.modal.run/api/stocks/NVDA/history?period=1mo"
-curl -X POST "https://mikledez--stock-predictor-api-fastapi-app.us-east.modal.run/api/stocks/SPY/predict"
+# Live checks (stock endpoints need a token from /api/auth/login)
+API=https://mikledez--stock-predictor-api-fastapi-app.us-east.modal.run/api
+curl $API/health
+curl $API/health/db
+curl -H "Authorization: Bearer $TOKEN" "$API/stocks/NVDA/history?period=1mo"
+curl -X POST -H "Authorization: Bearer $TOKEN" "$API/stocks/SPY/predict"
 ```
 
 The first prediction after a deploy reloads TimesFM (about 30–50 s); warm calls
@@ -85,15 +114,19 @@ are about 7 s. Model weights are cached in the `stock-predictor-hf-cache` Modal
 Volume.
 
 The backend is `backend/modal_app.py` (FastAPI ASGI). The Modal secret
-`stock-predictor-api` holds `DATABASE_URL` and `CORS_ORIGINS`. The frontend is a
-Vite SPA on Vercel with `VITE_API_BASE` pointing at the Modal endpoint.
+`stock-predictor-api` holds `DATABASE_URL`, `CORS_ORIGINS`, and `JWT_SECRET`.
+Apply migrations to Neon (`uv run alembic upgrade head`) before deploying a
+backend that includes auth. The frontend is a Vite SPA on Vercel with
+`VITE_API_BASE` pointing at the Modal endpoint; `frontend/vercel.json` rewrites
+all paths to `index.html` so client routes load directly.
 
 ```bash
 # Backend deploy
 cd backend
 modal secret create stock-predictor-api --force \
   DATABASE_URL='postgresql+psycopg://...neon.tech/neondb?sslmode=require' \
-  'CORS_ORIGINS=["https://stock-predictor-omega-five.vercel.app"]'
+  'CORS_ORIGINS=["https://stock-predictor-omega-five.vercel.app"]' \
+  JWT_SECRET='<long random string>'
 modal deploy modal_app.py
 modal app rollover stock-predictor-api   # after changing a secret
 
@@ -155,4 +188,14 @@ details.
 2. ~~Backend: inference pipeline behind `POST /predict`, persist prediction records.~~
 3. ~~Frontend: three-stock selector, history chart, Predict Stock flow, evaluation panel.~~
 4. ~~Docs, evaluation charts, and clean-environment setup test.~~
-5. Optional: prediction-history list or watchlist polish.
+5. ~~Accounts, prediction history, watchlist, and headlines.~~
+
+## Limitations
+
+- The first forecast after a Modal cold start takes about 30–50 s while
+  TimesFM loads; the UI says so and does not time out early.
+- Headlines come from yfinance's unofficial Yahoo endpoint, which is sometimes
+  down or rate-limited. The API then returns `[]` and the UI hides the section.
+- During market hours yfinance reports today's in-progress bar as the latest
+  close, so "last close" and the forecast date can refer to the current session.
+- Forecast dates skip weekends only; exchange holidays are not modeled.

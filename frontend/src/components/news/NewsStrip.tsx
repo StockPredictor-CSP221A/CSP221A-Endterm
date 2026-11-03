@@ -32,7 +32,7 @@ export function NewsStrip() {
               <TabsTrigger
                 key={entry.symbol}
                 value={entry.symbol}
-                className="px-3 text-xs data-[state=active]:text-brand"
+                className="px-3 text-xs"
               >
                 {entry.symbol}
               </TabsTrigger>

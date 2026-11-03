@@ -5,13 +5,6 @@ const currency = new Intl.NumberFormat('en-US', {
   maximumFractionDigits: 2,
 })
 
-const compactCurrency = new Intl.NumberFormat('en-US', {
-  style: 'currency',
-  currency: 'USD',
-  notation: 'compact',
-  maximumFractionDigits: 0,
-})
-
 const percent = new Intl.NumberFormat('en-US', {
   style: 'percent',
   minimumFractionDigits: 2,
@@ -33,10 +26,6 @@ function parseDate(iso: string): Date {
 
 export function formatCurrency(value: number): string {
   return currency.format(value)
-}
-
-export function formatCompactCurrency(value: number): string {
-  return compactCurrency.format(value)
 }
 
 export function formatSignedCurrency(value: number): string {

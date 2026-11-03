@@ -23,6 +23,7 @@ import { Input } from '@/components/ui/input'
 import { useAuth } from '@/hooks/useAuth'
 import { redirectTarget } from '@/lib/redirect'
 import { ApiError, errorText } from '@/services/api'
+import { usePageTitle } from '@/hooks/usePageTitle'
 
 const schema = z
   .object({
@@ -42,6 +43,7 @@ const schema = z
 type Values = z.infer<typeof schema>
 
 export function SignUpPage() {
+  usePageTitle('Create account')
   const { register } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()

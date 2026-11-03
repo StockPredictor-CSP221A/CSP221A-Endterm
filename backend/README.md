@@ -18,8 +18,8 @@ app/
 ├── main.py          # FastAPI app, CORS, router wiring
 ├── config.py        # env-backed settings (pydantic-settings)
 ├── core/            # password hashing, JWT, auth dependency
-├── routes/          # HTTP endpoints (health, auth, stocks)
-├── services/        # market-data retrieval/validation
+├── routes/          # HTTP endpoints (health, auth, stocks, predictions, watchlist)
+├── services/        # market data, universe metadata, news normalization/cache
 ├── ml/              # inference, preprocessing, baselines
 ├── db/              # SQLAlchemy engine/session
 ├── db_models/       # SQLAlchemy table models
@@ -65,6 +65,34 @@ Settings (see `.env.example`):
 
 Tests run against an in-memory SQLite database through a `get_db` dependency
 override (`tests/conftest.py`); they never touch Neon.
+
+## Data endpoints
+
+All require a bearer token. Symbols outside `SPY`, `NVDA`, `KO` return `404`.
+
+| Method | Path | Notes |
+| --- | --- | --- |
+| `GET` | `/api/stocks` | symbol, name, role, description for the fixed universe |
+| `GET` | `/api/stocks/{symbol}/history?period=1y` | `period` in `5d, 1mo, 3mo, 6mo, ytd, 1y, 2y, 5y` (else `422`) |
+| `POST` | `/api/stocks/{symbol}/predict` | TimesFM forecast saved with the caller's `user_id` |
+| `GET` | `/api/stocks/{symbol}/news?limit=4` | `limit` 1–10; normalized yfinance headlines, cached 10 min; `[]` on any provider failure |
+| `GET` | `/api/predictions?symbol=&limit=20` | caller's forecasts only, newest first; `limit` 1–100 |
+| `GET` | `/api/watchlist` | caller's symbols with metadata and `added_at` |
+| `POST` | `/api/watchlist/{symbol}` | idempotent add |
+| `DELETE` | `/api/watchlist/{symbol}` | idempotent remove, `204` |
+
+## Migrations
+
+| Revision | Change |
+| --- | --- |
+| `0001` | `predictions` |
+| `0002` | `users` (unique lowercase email) |
+| `0003` | nullable `predictions.user_id` → `users.id` `ON DELETE SET NULL`, indexed; existing rows keep `NULL` |
+| `0004` | `watchlist_items` (`user_id` → `users.id` `ON DELETE CASCADE`, unique `(user_id, symbol)`) |
+
+Apply with `uv run alembic upgrade head` against the target database before
+deploying code that needs the new tables. All four upgrade and downgrade
+cleanly on PostgreSQL.
 
 ## Model
 
