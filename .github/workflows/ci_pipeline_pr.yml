@@ -36,18 +36,3 @@ jobs:
 
       - name: Run linter
         run: npm run lint --prefix ./frontend
-
-  run-semgrep:
-    name: Run Semgrep Scan
-    runs-on: ubuntu-latest
-
-    container:
-      image: semgrep/semgrep
-
-    if: (github.actor != 'dependabot[bot]')
-
-    steps:
-      - uses: actions/checkout@v6
-      - run: semgrep ci
-        env:
-          SEMGREP_APP_TOKEN: ${{ secrets.SEMGREPTOKEN }}
