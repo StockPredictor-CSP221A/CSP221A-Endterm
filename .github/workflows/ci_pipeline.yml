@@ -27,6 +27,7 @@ jobs:
   run-linters:
     name: Run Linters
     runs-on: ubuntu-latest
+    needs: install
 
     steps:
       - name: Install Node.js dependencies
