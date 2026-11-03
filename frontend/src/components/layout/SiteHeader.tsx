@@ -1,5 +1,6 @@
 import { MainNav } from './MainNav'
 import { MobileNav } from './MobileNav'
+import { UserMenu } from './UserMenu'
 import { Wordmark } from './Wordmark'
 
 export function SiteHeader() {
@@ -11,7 +12,9 @@ export function SiteHeader() {
         <div className="ml-6 hidden md:block">
           <MainNav />
         </div>
-        <div className="ml-auto flex items-center gap-2" />
+        <div className="ml-auto flex items-center gap-2">
+          <UserMenu />
+        </div>
       </div>
     </header>
   )

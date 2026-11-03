@@ -25,3 +25,25 @@ export interface Prediction {
   model_name: string
   disclaimer: string
 }
+
+export interface User {
+  id: number
+  email: string
+  display_name: string | null
+  created_at: string
+}
+
+export interface TokenResponse {
+  access_token: string
+  token_type: 'bearer'
+  user: User
+}
+
+export interface LoginPayload {
+  email: string
+  password: string
+}
+
+export interface RegisterPayload extends LoginPayload {
+  display_name?: string | null
+}

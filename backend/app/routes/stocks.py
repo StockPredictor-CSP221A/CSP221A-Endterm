@@ -6,6 +6,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.config import get_settings
+from app.core.deps import get_current_user
 from app.db.session import get_db
 from app.db_models.prediction import PredictionRecord
 from app.ml.forecast import (
@@ -24,7 +25,11 @@ from app.services.market_data import (
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/stocks", tags=["stocks"])
+router = APIRouter(
+    prefix="/stocks",
+    tags=["stocks"],
+    dependencies=[Depends(get_current_user)],
+)
 
 
 @router.get("/{symbol}/history", response_model=StockHistory)

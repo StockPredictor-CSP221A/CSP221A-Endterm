@@ -5,6 +5,7 @@ import { BrowserRouter } from 'react-router-dom'
 
 import { Toaster } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
+import { AuthProvider } from '@/context/AuthProvider'
 import { queryClient } from '@/lib/query-client'
 
 import { App } from './App'
@@ -14,10 +15,12 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <TooltipProvider delayDuration={200}>
-          <App />
-          <Toaster position="bottom-right" richColors closeButton />
-        </TooltipProvider>
+        <AuthProvider>
+          <TooltipProvider delayDuration={200}>
+            <App />
+            <Toaster position="bottom-right" richColors closeButton />
+          </TooltipProvider>
+        </AuthProvider>
       </BrowserRouter>
     </QueryClientProvider>
   </StrictMode>,
