@@ -1,6 +1,7 @@
 import { MarketSnapshot } from '@/components/dashboard/MarketSnapshot'
 import { ErrorState } from '@/components/common/ErrorState'
 import { CardGridSkeleton } from '@/components/common/PageSkeleton'
+import { RecentPredictions } from '@/components/forecast/RecentPredictions'
 import { ModelPerformanceCard } from '@/components/ModelPerformanceCard'
 import { StockCard } from '@/components/stocks/StockCard'
 import { useAuth } from '@/hooks/useAuth'
@@ -79,6 +80,8 @@ export function DashboardPage() {
           </div>
         )}
       </section>
+
+      <RecentPredictions emptyHint="Run a forecast on any stock card above. Your last five appear here." />
 
       <ModelPerformanceCard />
     </div>

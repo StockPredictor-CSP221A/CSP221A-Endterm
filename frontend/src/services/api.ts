@@ -3,6 +3,7 @@ import type {
   LoginPayload,
   Prediction,
   RegisterPayload,
+  SavedPrediction,
   StockHistory,
   StockInfo,
   TokenResponse,
@@ -118,6 +119,15 @@ export const api = {
       `${symbolPath(symbol)}/history?period=${encodeURIComponent(period)}`,
       { signal },
     ),
+
+  predictions: (
+    { symbol, limit = 20 }: { symbol?: string; limit?: number },
+    signal?: AbortSignal,
+  ) => {
+    const params = new URLSearchParams({ limit: String(limit) })
+    if (symbol) params.set('symbol', symbol)
+    return request<SavedPrediction[]>(`/predictions?${params}`, { signal })
+  },
 
   predict: (symbol: string) =>
     request<Prediction>(`${symbolPath(symbol)}/predict`, { method: 'POST' }),

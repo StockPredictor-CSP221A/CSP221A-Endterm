@@ -5,6 +5,7 @@ import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { EmptyState } from '@/components/common/EmptyState'
 import { ErrorState } from '@/components/common/ErrorState'
 import { ForecastCard } from '@/components/forecast/ForecastCard'
+import { RecentPredictions } from '@/components/forecast/RecentPredictions'
 import { PeriodTabs } from '@/components/stock-detail/PeriodTabs'
 import { StockHeader } from '@/components/stock-detail/StockHeader'
 import { StockStats } from '@/components/stock-detail/StockStats'
@@ -138,6 +139,12 @@ function StockDetail({ symbol }: { symbol: StockSymbol }) {
               ))}
             </div>
           )}
+
+          <RecentPredictions
+            symbol={symbol}
+            title={`Your ${symbol} forecasts`}
+            emptyHint={`Run a forecast and your last five ${symbol} results appear here.`}
+          />
         </div>
 
         <aside className="space-y-6">

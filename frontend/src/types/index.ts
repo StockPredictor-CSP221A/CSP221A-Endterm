@@ -36,6 +36,19 @@ export interface Prediction {
   disclaimer: string
 }
 
+export interface SavedPrediction {
+  id: number
+  symbol: string
+  forecast_horizon: string
+  last_observed_date: string
+  last_observed_close: number
+  forecast_date: string
+  predicted_close: number
+  model_name: string
+  model_version: string | null
+  created_at: string
+}
+
 export interface User {
   id: number
   email: string
