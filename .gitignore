@@ -19,7 +19,8 @@ dist/
 *.local
 
 # Data and experiments output
-data/
+/data/
+/experiments/data/
 *.parquet
 *.csv
 # Keep the required benchmark artifacts (metrics + raw predictions)
