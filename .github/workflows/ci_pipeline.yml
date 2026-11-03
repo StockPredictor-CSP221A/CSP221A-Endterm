@@ -48,4 +48,4 @@ jobs:
       - uses: actions/checkout@v6
       - run: semgrep ci
         env:
-          SEMGREP_APP_TOKEN: ${{ secrets.SemgrepToken }}
+          SEMGREP_APP_TOKEN: ${{ secrets.SEMGREPTOKEN }}
