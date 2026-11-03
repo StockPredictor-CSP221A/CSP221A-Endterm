@@ -17,7 +17,8 @@ uv run uvicorn app.main:app --reload
 app/
 ├── main.py          # FastAPI app, CORS, router wiring
 ├── config.py        # env-backed settings (pydantic-settings)
-├── routes/          # HTTP endpoints (health, stocks)
+├── core/            # password hashing, JWT, auth dependency
+├── routes/          # HTTP endpoints (health, auth, stocks)
 ├── services/        # market-data retrieval/validation
 ├── ml/              # inference, preprocessing, baselines
 ├── db/              # SQLAlchemy engine/session
@@ -34,6 +35,36 @@ uv run pytest                 # tests
 uv run ruff check .           # lint
 uv run alembic upgrade head   # apply migrations (needs PostgreSQL)
 ```
+
+## Authentication
+
+Email/password accounts live in the `users` table. Passwords are hashed with
+Argon2 (`pwdlib`); sessions are stateless HS256 JWT bearer tokens with `sub`
+(user id), `iat`, and `exp` claims.
+
+| Method | Path | Auth | Notes |
+| --- | --- | --- | --- |
+| `POST` | `/api/auth/register` | public | `{email, password, display_name?}`; password ≥ 8 chars; email lowercased; `409` if taken |
+| `POST` | `/api/auth/login` | public | `{email, password}`; `401` with a generic message on bad credentials |
+| `GET` | `/api/auth/me` | bearer | `{id, email, display_name, created_at}` |
+| `POST` | `/api/auth/logout` | public | `204`; the client discards its token |
+
+Register and login return `{access_token, token_type: "bearer", user}`.
+Protected endpoints answer `401` with `WWW-Authenticate: Bearer` when the token
+is missing, malformed, expired, or belongs to a deleted user.
+
+Settings (see `.env.example`):
+
+- `JWT_SECRET` — required in every shared environment (Modal secret
+  `stock-predictor-api`). Generate one with
+  `python -c "import secrets; print(secrets.token_urlsafe(64))"`. If unset, the
+  app signs with a random per-process key and logs a warning, so sessions do not
+  survive restarts.
+- `JWT_ALGORITHM` — default `HS256`.
+- `ACCESS_TOKEN_EXPIRE_MINUTES` — default `10080` (7 days).
+
+Tests run against an in-memory SQLite database through a `get_db` dependency
+override (`tests/conftest.py`); they never touch Neon.
 
 ## Model
 
@@ -67,7 +98,8 @@ returns the existing FastAPI app. The
 `stock-predictor-hf-cache` volume is mounted at `/cache` with
 `HF_HOME=/cache/huggingface`; the function uses `cpu=2`, `memory=4096`,
 `timeout=600`, and `scaledown_window=60`. The Modal secret
-`stock-predictor-api` supplies `DATABASE_URL` and `CORS_ORIGINS`.
+`stock-predictor-api` supplies `DATABASE_URL`, `CORS_ORIGINS`, and
+`JWT_SECRET`.
 
 Set `DATABASE_URL` to the Neon **pooled** connection string (keep
 `?sslmode=require`), then apply the schema:
@@ -83,7 +115,8 @@ uv tool install modal          # once
 modal setup                    # browser auth, once
 modal secret create stock-predictor-api --force \
   DATABASE_URL='postgresql+psycopg://...neon.tech/neondb?sslmode=require' \
-  'CORS_ORIGINS=["https://stock-predictor-omega-five.vercel.app"]'
+  'CORS_ORIGINS=["https://stock-predictor-omega-five.vercel.app"]' \
+  JWT_SECRET='<long random string>'
 modal deploy modal_app.py
 modal app rollover stock-predictor-api   # after changing a secret
 ```

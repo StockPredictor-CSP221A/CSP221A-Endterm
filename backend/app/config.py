@@ -17,6 +17,13 @@ class Settings(BaseSettings):
 
     default_history_period: str = "1y"
 
+    # Auth. Set JWT_SECRET in every shared environment; when it is empty the
+    # app signs tokens with a per-process key (fine locally, but sessions do
+    # not survive restarts or span multiple workers).
+    jwt_secret: str = ""
+    jwt_algorithm: str = "HS256"
+    access_token_expire_minutes: int = 60 * 24 * 7
+
     @field_validator("database_url")
     @classmethod
     def normalize_database_url(cls, value: str) -> str:
