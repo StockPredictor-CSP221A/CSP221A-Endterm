@@ -4,6 +4,7 @@ import { ErrorState } from '@/components/common/ErrorState'
 import { CardGridSkeleton } from '@/components/common/PageSkeleton'
 import { RecentPredictions } from '@/components/forecast/RecentPredictions'
 import { ModelPerformanceCard } from '@/components/ModelPerformanceCard'
+import { NewsStrip } from '@/components/news/NewsStrip'
 import { StockCard } from '@/components/stocks/StockCard'
 import { useAuth } from '@/hooks/useAuth'
 import { useHistories, useStocks } from '@/hooks/useStocks'
@@ -91,6 +92,8 @@ export function DashboardPage() {
       </div>
 
       <ModelPerformanceCard />
+
+      <NewsStrip />
     </div>
   )
 }

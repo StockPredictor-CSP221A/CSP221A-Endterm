@@ -53,6 +53,14 @@ export interface SavedPrediction {
   created_at: string
 }
 
+export interface NewsItem {
+  title: string
+  publisher: string | null
+  url: string
+  published_at: string | null
+  thumbnail: string | null
+}
+
 export interface User {
   id: number
   email: string

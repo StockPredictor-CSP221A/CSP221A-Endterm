@@ -1,6 +1,7 @@
 import { clearToken, getToken } from '@/lib/auth-token'
 import type {
   LoginPayload,
+  NewsItem,
   Prediction,
   RegisterPayload,
   SavedPrediction,
@@ -137,6 +138,9 @@ export const api = {
     remove: (symbol: string) =>
       request<void>(`/watchlist/${encodeURIComponent(symbol)}`, { method: 'DELETE' }),
   },
+
+  news: (symbol: string, limit = 4, signal?: AbortSignal) =>
+    request<NewsItem[]>(`${symbolPath(symbol)}/news?limit=${limit}`, { signal }),
 
   predict: (symbol: string) =>
     request<Prediction>(`${symbolPath(symbol)}/predict`, { method: 'POST' }),

@@ -11,7 +11,9 @@ from app.db.session import get_db
 from app.db_models.prediction import PredictionRecord
 from app.ml.forecast import InsufficientHistoryError, build_prediction
 from app.ml.timesfm import get_forecaster
+from app.schemas.news import NewsItem
 from app.schemas.stock import Prediction, StockHistory, StockInfo
+from app.services import news as news_service
 from app.services.market_data import (
     STOCK_UNIVERSE,
     InvalidSymbolError,
@@ -55,6 +57,20 @@ def history(
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY, detail=str(exc)
         ) from exc
+
+
+@router.get("/{symbol}/news", response_model=list[NewsItem])
+def news(
+    symbol: str, limit: Annotated[int, Query(ge=1, le=10)] = 4
+) -> list[NewsItem]:
+    """Recent headlines. Provider problems return an empty list, never an error."""
+    try:
+        normalized = ensure_supported(symbol)
+    except InvalidSymbolError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)
+        ) from exc
+    return news_service.get_news(normalized, limit)
 
 
 @router.post("/{symbol}/predict", response_model=Prediction)

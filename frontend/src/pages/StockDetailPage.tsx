@@ -6,6 +6,7 @@ import { EmptyState } from '@/components/common/EmptyState'
 import { ErrorState } from '@/components/common/ErrorState'
 import { ForecastCard } from '@/components/forecast/ForecastCard'
 import { RecentPredictions } from '@/components/forecast/RecentPredictions'
+import { StockNews } from '@/components/news/StockNews'
 import { PeriodTabs } from '@/components/stock-detail/PeriodTabs'
 import { StockHeader } from '@/components/stock-detail/StockHeader'
 import { StockStats } from '@/components/stock-detail/StockStats'
@@ -162,6 +163,8 @@ function StockDetail({ symbol }: { symbol: StockSymbol }) {
           />
         </aside>
       </div>
+
+      <StockNews symbol={symbol} />
     </div>
   )
 }
