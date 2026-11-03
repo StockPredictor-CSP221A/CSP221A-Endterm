@@ -1,11 +1,10 @@
-import { useMutation } from '@tanstack/react-query'
 import { SearchX, Sparkles } from 'lucide-react'
-import { useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
 
 import { EmptyState } from '@/components/common/EmptyState'
 import { ErrorState } from '@/components/common/ErrorState'
-import { PredictionPanel } from '@/components/legacy/PredictionPanel'
+import { ForecastCard } from '@/components/forecast/ForecastCard'
 import { PeriodTabs } from '@/components/stock-detail/PeriodTabs'
 import { StockHeader } from '@/components/stock-detail/StockHeader'
 import { StockStats } from '@/components/stock-detail/StockStats'
@@ -15,9 +14,10 @@ import { Card } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { PERIODS, type Period } from '@/data/periods'
 import { STOCKS, isStockSymbol, type StockSymbol } from '@/data/stocks'
+import { useForecast } from '@/hooks/useForecast'
 import { useStockHistory, useStocks } from '@/hooks/useStocks'
 import { summarizeHistory } from '@/lib/history'
-import { api, errorText } from '@/services/api'
+import { errorText } from '@/services/api'
 
 export function StockDetailPage() {
   const { symbol } = useParams()
@@ -46,12 +46,29 @@ function StockDetail({ symbol }: { symbol: StockSymbol }) {
   const [period, setPeriod] = useState<Period>('1y')
   const stocks = useStocks()
   const history = useStockHistory(symbol, period)
-  const predict = useMutation({ mutationFn: () => api.predict(symbol) })
+  const predict = useForecast(symbol)
+  const [searchParams, setSearchParams] = useSearchParams()
+  const autoRan = useRef(false)
 
   const fallback = STOCKS.find((stock) => stock.symbol === symbol)!
   const info = stocks.data?.find((stock) => stock.symbol === symbol)
   const summary = history.data ? summarizeHistory(history.data.prices) : null
   const periodLabel = PERIODS.find((item) => item.value === period)?.label ?? period
+  const canForecast = summary !== null && !predict.isPending
+
+  function runForecast() {
+    if (!canForecast) return
+    document.getElementById('forecast')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+    predict.mutate()
+  }
+
+  // Dashboard "Run forecast" links land here with ?forecast=run.
+  useEffect(() => {
+    if (autoRan.current || searchParams.get('forecast') !== 'run' || !summary) return
+    autoRan.current = true
+    setSearchParams({}, { replace: true })
+    predict.mutate()
+  }, [searchParams, setSearchParams, summary, predict])
 
   return (
     <div className="space-y-8">
@@ -65,11 +82,11 @@ function StockDetail({ symbol }: { symbol: StockSymbol }) {
           <Button
             size="lg"
             className="h-10 px-4"
-            onClick={() => predict.mutate()}
-            disabled={predict.isPending || !summary}
+            onClick={runForecast}
+            disabled={!canForecast}
           >
             <Sparkles aria-hidden />
-            Run forecast
+            {predict.isPending ? 'Forecasting…' : 'Run forecast'}
           </Button>
         }
       />
@@ -124,13 +141,13 @@ function StockDetail({ symbol }: { symbol: StockSymbol }) {
         </div>
 
         <aside className="space-y-6">
-          <PredictionPanel
+          <ForecastCard
             symbol={symbol}
-            prediction={predict.data ?? null}
-            predicting={predict.isPending}
+            prediction={predict.data}
+            isPending={predict.isPending}
             error={predict.error ? errorText(predict.error) : null}
             disabled={!summary}
-            onPredict={() => predict.mutate()}
+            onRun={runForecast}
           />
         </aside>
       </div>

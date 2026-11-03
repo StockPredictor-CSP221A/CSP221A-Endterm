@@ -6,15 +6,10 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.config import get_settings
-from app.core.deps import get_current_user
+from app.core.deps import CurrentUser, get_current_user
 from app.db.session import get_db
 from app.db_models.prediction import PredictionRecord
-from app.ml.forecast import (
-    MODEL_NAME,
-    MODEL_VERSION,
-    InsufficientHistoryError,
-    build_prediction,
-)
+from app.ml.forecast import InsufficientHistoryError, build_prediction
 from app.ml.timesfm import get_forecaster
 from app.schemas.stock import Prediction, StockHistory, StockInfo
 from app.services.market_data import (
@@ -64,7 +59,7 @@ def history(
 
 @router.post("/{symbol}/predict", response_model=Prediction)
 def predict(
-    symbol: str, db: Annotated[Session, Depends(get_db)]
+    symbol: str, user: CurrentUser, db: Annotated[Session, Depends(get_db)]
 ) -> Prediction:
     try:
         normalized = ensure_supported(symbol)
@@ -100,14 +95,15 @@ def predict(
         ) from exc
 
     record = PredictionRecord(
+        user_id=user.id,
         symbol=prediction.symbol,
         forecast_horizon=prediction.forecast_horizon,
         last_observed_date=prediction.last_observed_date,
         last_observed_close=prediction.last_observed_close,
         forecast_date=prediction.forecast_date,
         predicted_close=prediction.predicted_close,
-        model_name=MODEL_NAME,
-        model_version=MODEL_VERSION,
+        model_name=prediction.model_name,
+        model_version=prediction.model_version,
     )
     try:
         db.add(record)

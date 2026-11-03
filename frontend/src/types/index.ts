@@ -32,6 +32,7 @@ export interface Prediction {
   forecast_date: string
   predicted_close: number
   model_name: string
+  model_version: string | null
   disclaimer: string
 }
 

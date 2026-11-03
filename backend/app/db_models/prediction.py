@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, Float, Integer, String, func
+from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db_models.base import Base
@@ -12,6 +12,9 @@ class PredictionRecord(Base):
     __tablename__ = "predictions"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
+    )
     symbol: Mapped[str] = mapped_column(String(16), index=True)
     forecast_horizon: Mapped[str] = mapped_column(String(32))
     last_observed_date: Mapped[str] = mapped_column(String(10))
