@@ -1,7 +1,10 @@
 name: PR Pipeline
 
 on:
+<<<<<<< HEAD
   workflow_dispatch:
+=======
+>>>>>>> cf8ca40 (chore: update workflow to reflect dev changes)
   pull_request:
     branches:
       - dev
@@ -31,9 +34,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+<<<<<<< HEAD
       - name: Check out Git repository
         uses: actions/checkout@v7
 
+=======
+>>>>>>> cf8ca40 (chore: update workflow to reflect dev changes)
       - name: Run linter
         run: npm run lint --prefix ./frontend
 
