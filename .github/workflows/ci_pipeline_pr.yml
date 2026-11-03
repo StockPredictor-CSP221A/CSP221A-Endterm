@@ -7,8 +7,8 @@ on:
       - dev
 
 jobs:
-  install:
-    name: Installation
+  install-lint:
+    name: Installation & Lint
     runs-on: ubuntu-latest
 
     steps:
