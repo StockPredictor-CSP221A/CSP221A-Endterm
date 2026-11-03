@@ -1,3 +1,4 @@
+import { CommandMenu } from './CommandMenu'
 import { MainNav } from './MainNav'
 import { MobileNav } from './MobileNav'
 import { UserMenu } from './UserMenu'
@@ -13,6 +14,7 @@ export function SiteHeader() {
           <MainNav />
         </div>
         <div className="ml-auto flex items-center gap-2">
+          <CommandMenu />
           <UserMenu />
         </div>
       </div>

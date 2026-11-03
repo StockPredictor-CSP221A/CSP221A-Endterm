@@ -1,5 +1,5 @@
 import logging
-from typing import Annotated
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.exc import SQLAlchemyError
@@ -16,8 +16,9 @@ from app.ml.forecast import (
     build_prediction,
 )
 from app.ml.timesfm import get_forecaster
-from app.schemas.stock import Prediction, StockHistory
+from app.schemas.stock import Prediction, StockHistory, StockInfo
 from app.services.market_data import (
+    STOCK_UNIVERSE,
     InvalidSymbolError,
     ensure_supported,
     get_history,
@@ -32,10 +33,21 @@ router = APIRouter(
 )
 
 
+HistoryPeriod = Literal["5d", "1mo", "3mo", "6mo", "ytd", "1y", "2y", "5y"]
+
+
+@router.get("", response_model=list[StockInfo])
+def list_stocks() -> list[StockInfo]:
+    """The fixed three-stock universe served by the app."""
+    return list(STOCK_UNIVERSE)
+
+
 @router.get("/{symbol}/history", response_model=StockHistory)
 def history(
     symbol: str,
-    period: str = Query(default=None, description="yfinance period, e.g. 1y, 6mo"),
+    period: Annotated[
+        HistoryPeriod | None, Query(description="yfinance period, e.g. 1y, 6mo")
+    ] = None,
 ) -> StockHistory:
     resolved_period = period or get_settings().default_history_period
     try:

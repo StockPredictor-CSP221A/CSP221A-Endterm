@@ -3,11 +3,32 @@ import re
 
 import yfinance as yf
 
-from app.schemas.stock import PricePoint, StockHistory
+from app.schemas.stock import PricePoint, StockHistory, StockInfo
 
 _SYMBOL_RE = re.compile(r"^[A-Za-z][A-Za-z0-9.\-]{0,9}$")
 
-SUPPORTED_SYMBOLS = ("SPY", "NVDA", "KO")
+STOCK_UNIVERSE: tuple[StockInfo, ...] = (
+    StockInfo(
+        symbol="SPY",
+        name="SPDR S&P 500 ETF",
+        role="Safe",
+        description="Broad US large-cap exposure and the locked benchmark asset.",
+    ),
+    StockInfo(
+        symbol="NVDA",
+        name="NVIDIA",
+        role="Volatile",
+        description="High-beta semiconductor name with larger price swings.",
+    ),
+    StockInfo(
+        symbol="KO",
+        name="Coca-Cola",
+        role="Defensive",
+        description="Low-volatility consumer staple with a contrasting regime.",
+    ),
+)
+
+SUPPORTED_SYMBOLS = tuple(stock.symbol for stock in STOCK_UNIVERSE)
 
 
 class InvalidSymbolError(ValueError):
@@ -29,6 +50,11 @@ def ensure_supported(symbol: str) -> str:
             f"Unsupported symbol {normalized!r}. Choose one of: {options}"
         )
     return normalized
+
+
+def get_stock_info(symbol: str) -> StockInfo:
+    normalized = ensure_supported(symbol)
+    return next(stock for stock in STOCK_UNIVERSE if stock.symbol == normalized)
 
 
 def get_history(symbol: str, period: str = "1y") -> StockHistory:

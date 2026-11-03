@@ -12,6 +12,13 @@ class DatabaseHealth(BaseModel):
     database: str
 
 
+class StockInfo(BaseModel):
+    symbol: str
+    name: str
+    role: str
+    description: str
+
+
 class PricePoint(BaseModel):
     date: str
     close: float

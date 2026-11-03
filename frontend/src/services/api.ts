@@ -4,6 +4,7 @@ import type {
   Prediction,
   RegisterPayload,
   StockHistory,
+  StockInfo,
   TokenResponse,
   User,
 } from '@/types'
@@ -109,6 +110,8 @@ export const api = {
     me: (signal?: AbortSignal) => request<User>('/auth/me', { signal }),
     logout: () => request<void>('/auth/logout', { method: 'POST' }),
   },
+
+  stocks: (signal?: AbortSignal) => request<StockInfo[]>('/stocks', { signal }),
 
   history: (symbol: string, period = '1y', signal?: AbortSignal) =>
     request<StockHistory>(

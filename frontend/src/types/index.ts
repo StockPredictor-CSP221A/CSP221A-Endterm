@@ -4,6 +4,15 @@ export interface HealthResponse {
   version: string
 }
 
+export type StockRole = 'Safe' | 'Volatile' | 'Defensive'
+
+export interface StockInfo {
+  symbol: string
+  name: string
+  role: StockRole
+  description: string
+}
+
 export interface PricePoint {
   date: string
   close: number
