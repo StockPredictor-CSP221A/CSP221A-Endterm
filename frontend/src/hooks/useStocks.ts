@@ -1,4 +1,4 @@
-import { useQueries, useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQueries, useQuery } from '@tanstack/react-query'
 
 import { queryKeys } from '@/lib/query-keys'
 import { api } from '@/services/api'
@@ -19,8 +19,9 @@ export function historyQuery(symbol: string, period: string) {
   }
 }
 
+/** Keeps the previous period on screen while the next one loads. */
 export function useStockHistory(symbol: string, period: string) {
-  return useQuery(historyQuery(symbol, period))
+  return useQuery({ ...historyQuery(symbol, period), placeholderData: keepPreviousData })
 }
 
 export function useHistories(symbols: readonly string[], period: string) {
