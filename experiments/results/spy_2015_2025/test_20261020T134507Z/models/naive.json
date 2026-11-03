@@ -1,0 +1,82 @@
+{
+  "model": "Naive previous-close baseline",
+  "model_key": "naive",
+  "checkpoint": "none",
+  "revision": "none",
+  "checkpoint_file": null,
+  "checkpoint_sha256": null,
+  "checkpoint_size_bytes": null,
+  "parameter_count": 0,
+  "parameter_count_nominal": 0,
+  "library": "none",
+  "library_version": "none",
+  "library_version_resolved": null,
+  "asset": "SPY",
+  "split": "test",
+  "input_window": 1024,
+  "horizon": 1,
+  "forecast_statistic": "median",
+  "quantile": 0.5,
+  "target": "next trading day's unadjusted close",
+  "train_range": {
+    "start": "2015-01-02",
+    "end": "2023-12-29"
+  },
+  "validation_range": {
+    "start": "2024-01-02",
+    "end": "2024-12-31"
+  },
+  "test_range": {
+    "start": "2025-01-02",
+    "end": "2025-12-31"
+  },
+  "hyperparameters": {
+    "prediction": "prediction(t) = Close(t-1)"
+  },
+  "feature_definitions": {
+    "target": "y_t = SPY unadjusted Close_t",
+    "input": "[y_{t-1024}, ..., y_{t-1}], chronological trading days, no gaps filled",
+    "exogenous_features": "none",
+    "returns_or_indicators": "none",
+    "future_covariates": "none",
+    "scaling": "none at dataset level; foundation models scale internally"
+  },
+  "protocol": {
+    "no_covariates": true,
+    "no_cross_learning": true,
+    "no_fine_tuning": true,
+    "no_dataset_level_scaling": true,
+    "context_is_past_only": true
+  },
+  "training_regime": "parameter_free",
+  "training_time_s": 0.0,
+  "load_time_s": 0.0,
+  "setup_compile_time_s": 0.0,
+  "inference": {
+    "warmup_forecasts_excluded": 3,
+    "n_forecasts": 250,
+    "split_rows": 250,
+    "latency_mean_ms": 0.0001369859091937542,
+    "latency_median_ms": 0.000125030055642128,
+    "latency_p95_ms": 0.00016705598682165146,
+    "latency_min_ms": 8.300412446260452e-05,
+    "latency_max_ms": 0.001375097781419754,
+    "total_inference_time_s": 3.424647729843855e-05
+  },
+  "memory": {
+    "measurement": "fresh subprocess, psutil RSS sampled every 5 ms during inference",
+    "harness_rss_bytes": 72810496,
+    "after_model_imports_rss_bytes": 72843264,
+    "baseline_rss_bytes": 72843264,
+    "after_load_rss_bytes": 72843264,
+    "after_setup_rss_bytes": 72843264,
+    "peak_inference_rss_bytes": 72876032,
+    "delta_from_baseline_bytes": 32768,
+    "delta_from_after_setup_bytes": 32768,
+    "ru_maxrss_bytes": 73596928
+  },
+  "torch_threads": null,
+  "runtime_metadata": {},
+  "predictions_file": "/Users/mikkel/Desktop/cswork/class/AI/CSP221A-Endterm/experiments/results/spy_2015_2025/test_20261020T134507Z/predictions/naive__SPY.csv",
+  "generated_utc": "2026-10-20T13:45:53Z"
+}

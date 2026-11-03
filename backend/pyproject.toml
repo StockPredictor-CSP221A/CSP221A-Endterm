@@ -16,6 +16,12 @@ dependencies = [
     "yfinance>=1.7.0",
 ]
 
+[project.optional-dependencies]
+ml = [
+    "torch==2.14.1",
+    "timesfm[torch]==3.0.2",
+]
+
 [dependency-groups]
 dev = [
     "pytest>=9.1.1",

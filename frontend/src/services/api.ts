@@ -1,6 +1,17 @@
 import type { HealthResponse, Prediction, StockHistory } from '../types'
 
-const API_BASE = import.meta.env.VITE_API_BASE ?? '/api'
+const API_BASE = (import.meta.env.VITE_API_BASE ?? '/api').replace(/\/+$/, '')
+
+async function errorMessage(res: Response): Promise<string> {
+  const text = await res.text().catch(() => '')
+  try {
+    const body = JSON.parse(text) as { detail?: unknown }
+    if (typeof body?.detail === 'string') return body.detail
+  } catch {
+    return text || `Request failed with status ${res.status}`
+  }
+  return text || `Request failed with status ${res.status}`
+}
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
@@ -9,8 +20,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   })
 
   if (!res.ok) {
-    const detail = await res.text().catch(() => '')
-    throw new Error(detail || `Request failed with status ${res.status}`)
+    throw new Error(await errorMessage(res))
   }
 
   return res.json() as Promise<T>

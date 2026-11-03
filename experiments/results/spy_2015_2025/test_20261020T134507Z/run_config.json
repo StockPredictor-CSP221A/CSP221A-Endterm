@@ -1,0 +1,245 @@
+{
+  "run_id": "test_20261020T134507Z",
+  "benchmark_id": "spy_2015_2025",
+  "split": "test",
+  "created_utc": "2026-10-20T13:45:07+00:00",
+  "selection_allowed": true,
+  "config_path": "/Users/mikkel/Desktop/cswork/class/AI/CSP221A-Endterm/experiments/configs/benchmark_spy.json",
+  "config": {
+    "benchmark_id": "spy_2015_2025",
+    "asset": "SPY",
+    "asset_role": "Safe / low volatility (locked benchmark asset)",
+    "data": {
+      "provider": "yfinance",
+      "symbol": "SPY",
+      "interval": "1d",
+      "auto_adjust": false,
+      "actions": false,
+      "price_column": "Close",
+      "start": "2015-01-02",
+      "end": "2025-12-31",
+      "download_start": "2015-01-01",
+      "download_end_exclusive": "2026-01-01"
+    },
+    "splits": {
+      "train": {
+        "start": "2015-01-02",
+        "end": "2023-12-29",
+        "expected_rows": 2264
+      },
+      "validation": {
+        "start": "2024-01-02",
+        "end": "2024-12-31",
+        "expected_rows": 252
+      },
+      "test": {
+        "start": "2025-01-02",
+        "end": "2025-12-31",
+        "expected_rows": 250
+      }
+    },
+    "protocol": {
+      "target": "next trading day's unadjusted close",
+      "horizon": 1,
+      "context_length": 1024,
+      "forecast_statistic": "median",
+      "quantile": 0.5,
+      "warmup_forecasts": 3,
+      "device": "cpu",
+      "dtype": "float32",
+      "torch_threads": 8,
+      "cross_learning": false,
+      "covariates": false,
+      "fine_tuning": false,
+      "training_regime": "zero_shot"
+    },
+    "feature_definitions": {
+      "target": "y_t = SPY unadjusted Close_t",
+      "input": "[y_{t-1024}, ..., y_{t-1}], chronological trading days, no gaps filled",
+      "exogenous_features": "none",
+      "returns_or_indicators": "none",
+      "future_covariates": "none",
+      "scaling": "none at dataset level; foundation models scale internally"
+    },
+    "metrics": {
+      "primary": [
+        "MAE",
+        "RMSE"
+      ],
+      "secondary": [
+        "nMAE",
+        "nRMSE",
+        "directional_accuracy"
+      ],
+      "normalization": "divide by mean close of the evaluated split",
+      "directional_accuracy": "sign(pred - previous_close) == sign(actual - previous_close)",
+      "bootstrap": {
+        "method": "moving-block",
+        "repetitions": 2000,
+        "block_length": 6,
+        "seed": 42,
+        "confidence": 0.95
+      }
+    },
+    "selection_rule": "lowest test MAE; RMSE, inference time, and memory are tie-breakers",
+    "models": {
+      "chronos2": {
+        "display_name": "Amazon Chronos-2",
+        "checkpoint": "amazon/chronos-2",
+        "revision": "29ec3766d36d6f73f0696f85560a422f50e8498c",
+        "library": "chronos-forecasting",
+        "library_version": "2.3.2",
+        "parameters": "120M",
+        "training_regime": "zero_shot",
+        "hyperparameters": {
+          "context_length": 1024,
+          "prediction_length": 1,
+          "quantile_levels": [
+            0.5
+          ],
+          "batch_size": 1,
+          "cross_learning": false,
+          "covariates": false,
+          "fine_tuning": false,
+          "device": "cpu",
+          "dtype": "float32",
+          "torch_threads": 8
+        }
+      },
+      "timesfm": {
+        "display_name": "Google TimesFM 2.5",
+        "checkpoint": "google/timesfm-2.5-200m-pytorch",
+        "revision": "1d952420fba87f3c6dee4f240de0f1a0fbc790e3",
+        "library": "timesfm",
+        "library_version": "3.0.2",
+        "parameters": "200M",
+        "training_regime": "zero_shot",
+        "hyperparameters": {
+          "max_context": 1024,
+          "horizon": 1,
+          "forecast_statistic": "median",
+          "normalize_inputs": true,
+          "use_continuous_quantile_head": true,
+          "force_flip_invariance": true,
+          "infer_is_positive": true,
+          "fix_quantile_crossing": true,
+          "per_core_batch_size": 1,
+          "torch_compile": false,
+          "device": "cpu",
+          "dtype": "float32",
+          "torch_threads": 8
+        }
+      },
+      "naive": {
+        "display_name": "Naive previous-close baseline",
+        "checkpoint": "none",
+        "revision": "none",
+        "library": "none",
+        "library_version": "none",
+        "parameters": 0,
+        "training_regime": "parameter_free",
+        "hyperparameters": {
+          "prediction": "prediction(t) = Close(t-1)"
+        }
+      }
+    }
+  },
+  "data_clean_path": "/Users/mikkel/Desktop/cswork/class/AI/CSP221A-Endterm/data/SPY_clean.csv",
+  "data_manifest": {
+    "symbol": "SPY",
+    "asset_role": "Safe / low volatility (locked benchmark asset)",
+    "provider": "yfinance",
+    "download_timestamp_utc": "2026-10-20T13:43:24+00:00",
+    "provider_library": "yfinance",
+    "provider_library_version": "1.7.0",
+    "request": {
+      "symbol": "SPY",
+      "start": "2015-01-01",
+      "end_exclusive": "2026-01-01",
+      "interval": "1d",
+      "auto_adjust": false,
+      "actions": false,
+      "price_column": "Close"
+    },
+    "raw_file": {
+      "path": "/Users/mikkel/Desktop/cswork/class/AI/CSP221A-Endterm/data/SPY_yfinance_raw.csv",
+      "sha256": "f28c261ddb0cc27664ea63522ae3e9bb59f51f21b430d4fe23a3dae47f9ee8e5",
+      "size_bytes": 301674,
+      "rows_in_close_series": 2766
+    },
+    "clean_file": {
+      "path": "/Users/mikkel/Desktop/cswork/class/AI/CSP221A-Endterm/data/SPY_clean.csv",
+      "sha256": "d7e1c5658d78cf8b5e68a7044457e5c725f7ea899b42dbf3fe18654e79f85036",
+      "size_bytes": 79080,
+      "rows": 2766
+    },
+    "selected_price_column": "Close",
+    "date_range": {
+      "start": "2015-01-02",
+      "end": "2025-12-31",
+      "trading_rows": 2766
+    },
+    "cleaning": {
+      "sorted_by_date": true,
+      "duplicate_dates_removed": 0,
+      "missing_close_rows_removed": 0,
+      "nonpositive_close_rows_removed": 0,
+      "interpolation": "none"
+    },
+    "splits": {
+      "train": {
+        "start": "2015-01-02",
+        "end": "2023-12-29",
+        "rows": 2264,
+        "expected_rows": 2264
+      },
+      "validation": {
+        "start": "2024-01-02",
+        "end": "2024-12-31",
+        "rows": 252,
+        "expected_rows": 252
+      },
+      "test": {
+        "start": "2025-01-02",
+        "end": "2025-12-31",
+        "rows": 250,
+        "expected_rows": 250
+      }
+    },
+    "split_boundary_observed_dates": {
+      "train": {
+        "start": "2015-01-02",
+        "end": "2023-12-29"
+      },
+      "validation": {
+        "start": "2024-01-02",
+        "end": "2024-12-31"
+      },
+      "test": {
+        "start": "2025-01-02",
+        "end": "2025-12-31"
+      }
+    },
+    "manifest_created_utc": "2026-10-20T13:43:25+00:00"
+  },
+  "model_prefetch": {
+    "chronos2": {
+      "checkpoint": "amazon/chronos-2",
+      "revision": "29ec3766d36d6f73f0696f85560a422f50e8498c",
+      "snapshot_path": "/Users/mikkel/.cache/huggingface/hub/models--amazon--chronos-2/snapshots/29ec3766d36d6f73f0696f85560a422f50e8498c",
+      "warm_cache_elapsed_s": 0.0038866670802235603
+    },
+    "timesfm": {
+      "checkpoint": "google/timesfm-2.5-200m-pytorch",
+      "revision": "1d952420fba87f3c6dee4f240de0f1a0fbc790e3",
+      "snapshot_path": "/Users/mikkel/.cache/huggingface/hub/models--google--timesfm-2.5-200m-pytorch/snapshots/1d952420fba87f3c6dee4f240de0f1a0fbc790e3",
+      "warm_cache_elapsed_s": 0.0010879170149564743
+    }
+  },
+  "models_order": [
+    "chronos2",
+    "timesfm",
+    "naive"
+  ],
+  "command": "run_benchmark.py --split test"
+}
