@@ -10,6 +10,7 @@ import { PeriodTabs } from '@/components/stock-detail/PeriodTabs'
 import { StockHeader } from '@/components/stock-detail/StockHeader'
 import { StockStats } from '@/components/stock-detail/StockStats'
 import { PriceChart } from '@/components/stocks/PriceChart'
+import { WatchlistButton } from '@/components/stocks/WatchlistButton'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -80,6 +81,8 @@ function StockDetail({ symbol }: { symbol: StockSymbol }) {
         description={info?.description}
         summary={summary}
         actions={
+          <>
+          <WatchlistButton symbol={symbol} variant="full" />
           <Button
             size="lg"
             className="h-10 px-4"
@@ -89,6 +92,7 @@ function StockDetail({ symbol }: { symbol: StockSymbol }) {
             <Sparkles aria-hidden />
             {predict.isPending ? 'Forecasting…' : 'Run forecast'}
           </Button>
+          </>
         }
       />
 

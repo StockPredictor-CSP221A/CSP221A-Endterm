@@ -12,6 +12,7 @@ import type { StockHistory, StockInfo } from '@/types'
 
 import { RoleBadge } from './RoleBadge'
 import { Sparkline } from './Sparkline'
+import { WatchlistButton } from './WatchlistButton'
 
 interface StockCardProps {
   stock: StockInfo
@@ -35,7 +36,10 @@ export function StockCard({ stock, history, isLoading, error, onRetry }: StockCa
           <span className="block text-lg font-semibold tracking-tight">{stock.symbol}</span>
           <span className="block truncate text-xs text-muted-foreground">{stock.name}</span>
         </Link>
-        <RoleBadge role={stock.role} />
+        <div className="flex shrink-0 items-center gap-1">
+          <RoleBadge role={stock.role} />
+          <WatchlistButton symbol={stock.symbol} className="-mr-1.5" />
+        </div>
       </div>
 
       <div className="min-h-[148px] px-5 pt-5">

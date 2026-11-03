@@ -8,6 +8,7 @@ import { NotFoundPage } from '@/pages/NotFoundPage'
 import { SignInPage } from '@/pages/SignInPage'
 import { SignUpPage } from '@/pages/SignUpPage'
 import { StockDetailPage } from '@/pages/StockDetailPage'
+import { WatchlistPage } from '@/pages/WatchlistPage'
 
 export function App() {
   return (
@@ -20,6 +21,7 @@ export function App() {
         <Route element={<AppShell />}>
           <Route index element={<DashboardPage />} />
           <Route path="stocks/:symbol" element={<StockDetailPage />} />
+          <Route path="watchlist" element={<WatchlistPage />} />
           <Route path="history" element={<HistoryPage />} />
         </Route>
       </Route>

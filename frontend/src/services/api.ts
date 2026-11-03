@@ -8,6 +8,7 @@ import type {
   StockInfo,
   TokenResponse,
   User,
+  WatchlistEntry,
 } from '@/types'
 
 const API_BASE = (import.meta.env.VITE_API_BASE ?? '/api').replace(/\/+$/, '')
@@ -127,6 +128,14 @@ export const api = {
     const params = new URLSearchParams({ limit: String(limit) })
     if (symbol) params.set('symbol', symbol)
     return request<SavedPrediction[]>(`/predictions?${params}`, { signal })
+  },
+
+  watchlist: {
+    list: (signal?: AbortSignal) => request<WatchlistEntry[]>('/watchlist', { signal }),
+    add: (symbol: string) =>
+      request<WatchlistEntry>(`/watchlist/${encodeURIComponent(symbol)}`, { method: 'POST' }),
+    remove: (symbol: string) =>
+      request<void>(`/watchlist/${encodeURIComponent(symbol)}`, { method: 'DELETE' }),
   },
 
   predict: (symbol: string) =>

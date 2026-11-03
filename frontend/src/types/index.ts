@@ -13,6 +13,10 @@ export interface StockInfo {
   description: string
 }
 
+export interface WatchlistEntry extends StockInfo {
+  added_at: string
+}
+
 export interface PricePoint {
   date: string
   close: number

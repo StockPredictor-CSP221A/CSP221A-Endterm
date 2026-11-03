@@ -1,4 +1,5 @@
 import { MarketSnapshot } from '@/components/dashboard/MarketSnapshot'
+import { WatchlistPanel } from '@/components/dashboard/WatchlistPanel'
 import { ErrorState } from '@/components/common/ErrorState'
 import { CardGridSkeleton } from '@/components/common/PageSkeleton'
 import { RecentPredictions } from '@/components/forecast/RecentPredictions'
@@ -30,6 +31,7 @@ export function DashboardPage() {
     const summary = prices ? summarizeHistory(prices) : null
     return summary ? [{ symbol: stock.symbol, summary }] : []
   })
+  const summaries = Object.fromEntries(snapshotRows.map((row) => [row.symbol, row.summary]))
 
   return (
     <div className="space-y-8">
@@ -81,7 +83,12 @@ export function DashboardPage() {
         )}
       </section>
 
-      <RecentPredictions emptyHint="Run a forecast on any stock card above. Your last five appear here." />
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="min-w-0 lg:col-span-2">
+          <RecentPredictions emptyHint="Run a forecast on any stock card above. Your last five appear here." />
+        </div>
+        <WatchlistPanel summaries={summaries} />
+      </div>
 
       <ModelPerformanceCard />
     </div>
