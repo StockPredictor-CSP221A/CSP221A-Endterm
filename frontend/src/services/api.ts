@@ -1,4 +1,4 @@
-import type { HealthResponse, Prediction, StockHistory } from '../types'
+import type { HealthResponse, Prediction, StockHistory } from '@/types'
 
 const API_BASE = (import.meta.env.VITE_API_BASE ?? '/api').replace(/\/+$/, '')
 

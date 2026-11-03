@@ -3,8 +3,8 @@ import {
   formatDate,
   formatPercent,
   formatSignedCurrency,
-} from '../lib/format'
-import type { Prediction } from '../types'
+} from '@/lib/format'
+import type { Prediction } from '@/types'
 
 interface PredictionPanelProps {
   symbol: string
@@ -57,15 +57,15 @@ export function PredictionPanel({
       : null
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+    <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             Forecast
           </h2>
           <p className="mt-1 text-lg font-semibold">{symbol} · next trading day</p>
         </div>
-        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
+        <span className="rounded-full bg-surface px-3 py-1 text-xs font-medium text-muted-foreground">
           TimesFM 2.5
         </span>
       </div>
@@ -74,7 +74,7 @@ export function PredictionPanel({
         type="button"
         onClick={onPredict}
         disabled={disabled || predicting}
-        className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+        className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground transition hover:bg-brand-strong disabled:cursor-not-allowed disabled:opacity-50"
       >
         {predicting && <Spinner />}
         {predicting
@@ -86,7 +86,7 @@ export function PredictionPanel({
 
       <div aria-live="polite" className="mt-5">
         {error && (
-          <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+          <div className="rounded-xl border border-loss/25 bg-loss/5 p-4 text-sm text-loss">
             <p className="font-medium">Forecast failed.</p>
             <p className="mt-1">{error}</p>
           </div>
@@ -94,8 +94,8 @@ export function PredictionPanel({
 
         {!error && prediction && (
           <div className="space-y-4">
-            <div className="rounded-xl bg-slate-50 p-4">
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+            <div className="rounded-xl bg-surface p-4">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                 Predicted close
               </p>
               <p className="mt-1 text-4xl font-semibold tracking-tight">
@@ -104,7 +104,7 @@ export function PredictionPanel({
               {delta !== null && deltaPercent !== null && (
                 <p
                   className={`mt-1 text-sm font-medium ${
-                    delta >= 0 ? 'text-emerald-600' : 'text-rose-600'
+                    delta >= 0 ? 'text-gain' : 'text-loss'
                   }`}
                 >
                   {formatSignedCurrency(delta)} ({formatPercent(deltaPercent)})
@@ -115,44 +115,44 @@ export function PredictionPanel({
 
             <dl className="grid grid-cols-2 gap-3 text-sm">
               <div>
-                <dt className="text-slate-500">Forecast date</dt>
+                <dt className="text-muted-foreground">Forecast date</dt>
                 <dd className="font-medium">
                   {formatDate(prediction.forecast_date)}
                 </dd>
               </div>
               <div>
-                <dt className="text-slate-500">Horizon</dt>
+                <dt className="text-muted-foreground">Horizon</dt>
                 <dd className="font-medium">{prediction.forecast_horizon}</dd>
               </div>
               <div>
-                <dt className="text-slate-500">Last observed</dt>
+                <dt className="text-muted-foreground">Last observed</dt>
                 <dd className="font-medium">
                   {formatCurrency(prediction.last_observed_close)}
                 </dd>
               </div>
               <div>
-                <dt className="text-slate-500">As of</dt>
+                <dt className="text-muted-foreground">As of</dt>
                 <dd className="font-medium">
                   {formatDate(prediction.last_observed_date)}
                 </dd>
               </div>
             </dl>
 
-            <p className="text-xs leading-relaxed text-slate-500">
+            <p className="text-xs leading-relaxed text-muted-foreground">
               {prediction.disclaimer}
             </p>
           </div>
         )}
 
         {!error && !prediction && !predicting && (
-          <p className="text-sm leading-relaxed text-slate-500">
+          <p className="text-sm leading-relaxed text-muted-foreground">
             Run the model for a one-day closing-price forecast. The backend
             fetches five years of daily history for context.
           </p>
         )}
 
         {!error && !prediction && predicting && (
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-muted-foreground">
             Loading TimesFM and scoring the latest window…
           </p>
         )}

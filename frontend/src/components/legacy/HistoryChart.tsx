@@ -13,8 +13,8 @@ import {
   formatCurrency,
   formatDate,
   formatShortDate,
-} from '../lib/format'
-import type { Prediction, StockHistory } from '../types'
+} from '@/lib/format'
+import type { Prediction, StockHistory } from '@/types'
 
 interface ChartPoint {
   date: string
@@ -54,14 +54,14 @@ export function HistoryChart({ history, prediction }: HistoryChartProps) {
 
   return (
     <div className="mt-5">
-      <div className="mb-3 flex flex-wrap items-center gap-4 text-xs text-slate-500">
+      <div className="mb-3 flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
         <span className="inline-flex items-center gap-2">
-          <span className="h-0.5 w-6 bg-slate-900" />
+          <span className="h-0.5 w-6 bg-primary" />
           Observed close
         </span>
         {hasForecast && (
           <span className="inline-flex items-center gap-2">
-            <span className="w-6 border-t-2 border-dashed border-emerald-600" />
+            <span className="w-6 border-t-2 border-dashed border-gain" />
             Forecast
           </span>
         )}
@@ -81,7 +81,7 @@ export function HistoryChart({ history, prediction }: HistoryChartProps) {
               tickLine={false}
               axisLine={false}
               minTickGap={40}
-              tick={{ fill: '#64748b', fontSize: 11 }}
+              tick={{ fill: '#9095a1', fontSize: 11 }}
               tickFormatter={(value) => formatShortDate(String(value))}
             />
             <YAxis
@@ -89,14 +89,15 @@ export function HistoryChart({ history, prediction }: HistoryChartProps) {
               tickLine={false}
               axisLine={false}
               domain={['auto', 'auto']}
-              tick={{ fill: '#64748b', fontSize: 11 }}
+              tick={{ fill: '#9095a1', fontSize: 11 }}
               tickFormatter={(value) => formatCompactCurrency(Number(value))}
             />
             <Tooltip
-              cursor={{ stroke: '#cbd5e1', strokeDasharray: '3 3' }}
+              cursor={{ stroke: 'rgb(255 255 255 / 0.2)', strokeDasharray: '3 3' }}
               contentStyle={{
+                backgroundColor: '#18191c',
                 borderRadius: 12,
-                borderColor: '#e2e8f0',
+                borderColor: 'rgb(255 255 255 / 0.08)',
                 fontSize: 12,
               }}
               labelFormatter={(label) => formatDate(String(label))}
@@ -109,7 +110,7 @@ export function HistoryChart({ history, prediction }: HistoryChartProps) {
               type="monotone"
               name="Observed close"
               dataKey="observed"
-              stroke="#0f172a"
+              stroke="var(--brand)"
               strokeWidth={2}
               dot={false}
               activeDot={{ r: 4 }}
@@ -120,10 +121,10 @@ export function HistoryChart({ history, prediction }: HistoryChartProps) {
                 type="monotone"
                 name="Forecast"
                 dataKey="predicted"
-                stroke="#059669"
+                stroke="var(--gain)"
                 strokeWidth={2}
                 strokeDasharray="6 5"
-                dot={{ r: 3, fill: '#059669' }}
+                dot={{ r: 3, fill: 'var(--gain)' }}
                 connectNulls={false}
               />
             )}

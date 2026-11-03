@@ -1,4 +1,4 @@
-import { PERIODS, type Period } from '../data/periods'
+import { PERIODS, type Period } from '@/data/periods'
 
 interface PeriodSelectorProps {
   value: Period
@@ -10,7 +10,7 @@ export function PeriodSelector({ value, onChange }: PeriodSelectorProps) {
     <div
       role="group"
       aria-label="Chart range"
-      className="inline-flex self-start rounded-lg border border-slate-200 bg-slate-50 p-1"
+      className="inline-flex self-start rounded-lg border border-border bg-surface p-1"
     >
       {PERIODS.map((period) => {
         const active = period.value === value
@@ -22,8 +22,8 @@ export function PeriodSelector({ value, onChange }: PeriodSelectorProps) {
             onClick={() => onChange(period.value)}
             className={`rounded-md px-3 py-1.5 text-xs font-semibold transition ${
               active
-                ? 'bg-white text-slate-900 shadow-sm'
-                : 'text-slate-500 hover:text-slate-700'
+                ? 'bg-card text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
             }`}
           >
             {period.label}

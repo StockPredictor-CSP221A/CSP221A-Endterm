@@ -1,4 +1,4 @@
-import { STOCKS, type StockSymbol } from '../data/stocks'
+import { STOCKS, type StockSymbol } from '@/data/stocks'
 
 interface StockSelectorProps {
   selected: StockSymbol
@@ -22,8 +22,8 @@ export function StockSelector({ selected, onSelect }: StockSelectorProps) {
             onClick={() => onSelect(stock.symbol)}
             className={`rounded-2xl border p-4 text-left transition ${
               active
-                ? 'border-slate-900 bg-slate-900 text-white shadow-lg shadow-slate-900/10'
-                : 'border-slate-200 bg-white text-slate-900 hover:border-slate-300 hover:bg-slate-50'
+                ? 'border-brand bg-primary text-primary-foreground shadow-lg shadow-black/40'
+                : 'border-border bg-card text-foreground hover:border-input hover:bg-surface'
             }`}
           >
             <div className="flex items-center justify-between gap-2">
@@ -31,8 +31,8 @@ export function StockSelector({ selected, onSelect }: StockSelectorProps) {
               <span
                 className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
                   active
-                    ? 'bg-white/15 text-white'
-                    : 'bg-slate-100 text-slate-500'
+                    ? 'bg-card/15 text-primary-foreground'
+                    : 'bg-surface text-muted-foreground'
                 }`}
               >
                 {stock.role}
@@ -40,7 +40,7 @@ export function StockSelector({ selected, onSelect }: StockSelectorProps) {
             </div>
             <p
               className={`mt-1 text-sm ${
-                active ? 'text-slate-200' : 'text-slate-600'
+                active ? 'text-muted-foreground' : 'text-muted-foreground'
               }`}
             >
               {stock.name}
