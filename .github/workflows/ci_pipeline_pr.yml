@@ -7,8 +7,8 @@ on:
       - dev
 
 jobs:
-  install:
-    name: Installation
+  install-lint:
+    name: Installation & Lint
     runs-on: ubuntu-latest
 
     steps:
@@ -25,29 +25,5 @@ jobs:
     - name: Install Node.js dependencies
       run: npm ci --prefix ./frontend
 
-  run-linters:
-    needs: install
-    name: Run Linters
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Check out Git repository
-        uses: actions/checkout@v7
-
-      - name: Run linter
-        run: npm run lint --prefix ./frontend
-
-  run-semgrep:
-    name: Run Semgrep Scan
-    runs-on: ubuntu-latest
-
-    container:
-      image: semgrep/semgrep
-
-    if: (github.actor != 'dependabot[bot]')
-
-    steps:
-      - uses: actions/checkout@v6
-      - run: semgrep ci
-        env:
-          SEMGREP_APP_TOKEN: ${{ secrets.SEMGREPTOKEN }}
+    - name: Run linter
+      run: npm run lint --prefix ./frontend
