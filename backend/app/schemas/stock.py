@@ -7,6 +7,11 @@ class HealthResponse(BaseModel):
     version: str
 
 
+class DatabaseHealth(BaseModel):
+    status: str
+    database: str
+
+
 class PricePoint(BaseModel):
     date: str
     close: float

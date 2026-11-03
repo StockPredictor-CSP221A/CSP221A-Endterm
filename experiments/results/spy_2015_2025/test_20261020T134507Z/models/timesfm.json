@@ -1,0 +1,97 @@
+{
+  "model": "Google TimesFM 2.5",
+  "model_key": "timesfm",
+  "checkpoint": "google/timesfm-2.5-200m-pytorch",
+  "revision": "1d952420fba87f3c6dee4f240de0f1a0fbc790e3",
+  "checkpoint_file": "model.safetensors",
+  "checkpoint_sha256": "2f776efe6245e42b24bc4153ffdf61810140210e4bd3b01fb21f7aa779ab6ce8",
+  "checkpoint_size_bytes": 925181104,
+  "parameter_count": 231289280,
+  "parameter_count_nominal": "200M",
+  "library": "timesfm",
+  "library_version": "3.0.2",
+  "library_version_resolved": "3.0.2",
+  "asset": "SPY",
+  "split": "test",
+  "input_window": 1024,
+  "horizon": 1,
+  "forecast_statistic": "median",
+  "quantile": 0.5,
+  "target": "next trading day's unadjusted close",
+  "train_range": {
+    "start": "2015-01-02",
+    "end": "2023-12-29"
+  },
+  "validation_range": {
+    "start": "2024-01-02",
+    "end": "2024-12-31"
+  },
+  "test_range": {
+    "start": "2025-01-02",
+    "end": "2025-12-31"
+  },
+  "hyperparameters": {
+    "max_context": 1024,
+    "horizon": 1,
+    "forecast_statistic": "median",
+    "normalize_inputs": true,
+    "use_continuous_quantile_head": true,
+    "force_flip_invariance": true,
+    "infer_is_positive": true,
+    "fix_quantile_crossing": true,
+    "per_core_batch_size": 1,
+    "torch_compile": false,
+    "device": "cpu",
+    "dtype": "float32",
+    "torch_threads": 8
+  },
+  "feature_definitions": {
+    "target": "y_t = SPY unadjusted Close_t",
+    "input": "[y_{t-1024}, ..., y_{t-1}], chronological trading days, no gaps filled",
+    "exogenous_features": "none",
+    "returns_or_indicators": "none",
+    "future_covariates": "none",
+    "scaling": "none at dataset level; foundation models scale internally"
+  },
+  "protocol": {
+    "no_covariates": true,
+    "no_cross_learning": true,
+    "no_fine_tuning": true,
+    "no_dataset_level_scaling": true,
+    "context_is_past_only": true
+  },
+  "training_regime": "zero_shot",
+  "training_time_s": 0.0,
+  "load_time_s": 1.2516007500234991,
+  "setup_compile_time_s": 9.28329536691308e-05,
+  "inference": {
+    "warmup_forecasts_excluded": 3,
+    "n_forecasts": 250,
+    "split_rows": 250,
+    "latency_mean_ms": 111.33910397533327,
+    "latency_median_ms": 111.71420803293586,
+    "latency_p95_ms": 117.00292946770787,
+    "latency_min_ms": 100.74775002431124,
+    "latency_max_ms": 119.44233300164342,
+    "total_inference_time_s": 27.83477599383332
+  },
+  "memory": {
+    "measurement": "fresh subprocess, psutil RSS sampled every 5 ms during inference",
+    "harness_rss_bytes": 72744960,
+    "after_model_imports_rss_bytes": 236011520,
+    "baseline_rss_bytes": 236011520,
+    "after_load_rss_bytes": 1064173568,
+    "after_setup_rss_bytes": 1064501248,
+    "peak_inference_rss_bytes": 1098416128,
+    "delta_from_baseline_bytes": 862404608,
+    "delta_from_after_setup_bytes": 33914880,
+    "ru_maxrss_bytes": 1988853760
+  },
+  "torch_threads": 8,
+  "runtime_metadata": {
+    "device": "cpu",
+    "global_batch_size": 1
+  },
+  "predictions_file": "/Users/mikkel/Desktop/cswork/class/AI/CSP221A-Endterm/experiments/results/spy_2015_2025/test_20261020T134507Z/predictions/timesfm__SPY.csv",
+  "generated_utc": "2026-10-20T13:45:53Z"
+}
