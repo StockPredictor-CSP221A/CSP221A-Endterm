@@ -30,6 +30,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    - name: Check out Git repository
+      uses: actions/checkout@v7
+
       - name: Run linter
         run: npm run lint --prefix ./frontend
 
