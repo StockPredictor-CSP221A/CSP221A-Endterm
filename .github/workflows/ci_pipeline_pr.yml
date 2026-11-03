@@ -7,8 +7,8 @@ on:
       - dev
 
 jobs:
-  install:
-    name: Installation
+  install-lint:
+    name: Installation & Lint
     runs-on: ubuntu-latest
 
     steps:
@@ -25,17 +25,8 @@ jobs:
     - name: Install Node.js dependencies
       run: npm ci --prefix ./frontend
 
-  run-linters:
-    needs: install
-    name: Run Linters
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Check out Git repository
-        uses: actions/checkout@v7
-
-      - name: Run linter
-        run: npm run lint --prefix ./frontend
+    - name: Run linter
+      run: npm run lint --prefix ./frontend
 
   run-semgrep:
     name: Run Semgrep Scan
