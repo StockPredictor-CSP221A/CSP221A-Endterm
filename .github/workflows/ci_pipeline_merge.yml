@@ -1,0 +1,11 @@
+name: Merge Pipeline
+
+on:
+  push:
+      branches:
+        - main
+
+jobs:
+  placeholder:
+    name: Placeholder
+    runs-on: ubuntu-latest
