@@ -1,0 +1,77 @@
+{
+  "symbol": "SPY",
+  "asset_role": "Safe / low volatility (locked benchmark asset)",
+  "provider": "yfinance",
+  "download_timestamp_utc": "2026-10-20T13:43:24+00:00",
+  "provider_library": "yfinance",
+  "provider_library_version": "1.7.0",
+  "request": {
+    "symbol": "SPY",
+    "start": "2015-01-01",
+    "end_exclusive": "2026-01-01",
+    "interval": "1d",
+    "auto_adjust": false,
+    "actions": false,
+    "price_column": "Close"
+  },
+  "raw_file": {
+    "path": "/Users/mikkel/Desktop/cswork/class/AI/CSP221A-Endterm/data/SPY_yfinance_raw.csv",
+    "sha256": "f28c261ddb0cc27664ea63522ae3e9bb59f51f21b430d4fe23a3dae47f9ee8e5",
+    "size_bytes": 301674,
+    "rows_in_close_series": 2766
+  },
+  "clean_file": {
+    "path": "/Users/mikkel/Desktop/cswork/class/AI/CSP221A-Endterm/data/SPY_clean.csv",
+    "sha256": "d7e1c5658d78cf8b5e68a7044457e5c725f7ea899b42dbf3fe18654e79f85036",
+    "size_bytes": 79080,
+    "rows": 2766
+  },
+  "selected_price_column": "Close",
+  "date_range": {
+    "start": "2015-01-02",
+    "end": "2025-12-31",
+    "trading_rows": 2766
+  },
+  "cleaning": {
+    "sorted_by_date": true,
+    "duplicate_dates_removed": 0,
+    "missing_close_rows_removed": 0,
+    "nonpositive_close_rows_removed": 0,
+    "interpolation": "none"
+  },
+  "splits": {
+    "train": {
+      "start": "2015-01-02",
+      "end": "2023-12-29",
+      "rows": 2264,
+      "expected_rows": 2264
+    },
+    "validation": {
+      "start": "2024-01-02",
+      "end": "2024-12-31",
+      "rows": 252,
+      "expected_rows": 252
+    },
+    "test": {
+      "start": "2025-01-02",
+      "end": "2025-12-31",
+      "rows": 250,
+      "expected_rows": 250
+    }
+  },
+  "split_boundary_observed_dates": {
+    "train": {
+      "start": "2015-01-02",
+      "end": "2023-12-29"
+    },
+    "validation": {
+      "start": "2024-01-02",
+      "end": "2024-12-31"
+    },
+    "test": {
+      "start": "2025-01-02",
+      "end": "2025-12-31"
+    }
+  },
+  "manifest_created_utc": "2026-10-20T13:43:25+00:00"
+}

@@ -19,9 +19,12 @@ dist/
 *.local
 
 # Data and experiments output
-data/
+/data/
+/experiments/data/
 *.parquet
 *.csv
+# Keep the required benchmark artifacts (metrics + raw predictions)
+!experiments/results/**/*.csv
 
 # OS / editor
 .DS_Store
@@ -32,4 +35,4 @@ data/
 stock_predictor_handoff.md
 
 # Workflow
-.github
+.github/
