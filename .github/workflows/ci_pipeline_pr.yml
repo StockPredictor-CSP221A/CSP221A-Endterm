@@ -7,9 +7,12 @@ on:
       - dev
 
 jobs:
-  install-lint:
-    name: Installation & Lint
+  frontend:
+    name: (Frontend) Install, Lint
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
 
     steps:
     - name: Check out Git repository
@@ -23,7 +26,39 @@ jobs:
         cache-dependency-path: frontend/package-lock.json
     
     - name: Install Node.js dependencies
-      run: npm ci --prefix ./frontend
+      run: npm ci
 
     - name: Run linter
-      run: npm run lint --prefix ./frontend
+      run: npm run lint
+    
+  backend:
+    name: (Backend) Install, Sync, Lint, Test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    
+    steps:
+    - name: Check out Git repository
+      uses: actions/checkout@v7
+
+    - name: Set Up Python
+      uses: actions/setup-python@v7
+      with:
+        python-version: "3.12"
+    
+    - name: Install uv
+      run: astral-sh/setup-uv@v10.3.3
+      with:
+        version: "0.11.31"
+        enable-cache: true
+        prune-cache: true
+
+    - name: Sync uv dependencies
+      run: uv sync --frozen
+
+    - name: Run linter
+      run: uv run ruff check .
+
+    - name: Run test
+      run: uv run pytest -q
