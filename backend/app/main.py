@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
-from app.routes import health, stocks
+from app.routes import auth, health, predictions, stocks, watchlist
 
 settings = get_settings()
 
@@ -17,7 +17,10 @@ app.add_middleware(
 )
 
 app.include_router(health.router, prefix=settings.api_prefix)
+app.include_router(auth.router, prefix=settings.api_prefix)
 app.include_router(stocks.router, prefix=settings.api_prefix)
+app.include_router(predictions.router, prefix=settings.api_prefix)
+app.include_router(watchlist.router, prefix=settings.api_prefix)
 
 
 @app.get("/")

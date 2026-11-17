@@ -1,22 +1,21 @@
 import logging
-from typing import Annotated
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.config import get_settings
+from app.core.deps import CurrentUser, get_current_user
 from app.db.session import get_db
 from app.db_models.prediction import PredictionRecord
-from app.ml.forecast import (
-    MODEL_NAME,
-    MODEL_VERSION,
-    InsufficientHistoryError,
-    build_prediction,
-)
+from app.ml.forecast import InsufficientHistoryError, build_prediction
 from app.ml.timesfm import get_forecaster
-from app.schemas.stock import Prediction, StockHistory
+from app.schemas.news import NewsItem
+from app.schemas.stock import Prediction, StockHistory, StockInfo
+from app.services import news as news_service
 from app.services.market_data import (
+    STOCK_UNIVERSE,
     InvalidSymbolError,
     ensure_supported,
     get_history,
@@ -24,13 +23,28 @@ from app.services.market_data import (
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/stocks", tags=["stocks"])
+router = APIRouter(
+    prefix="/stocks",
+    tags=["stocks"],
+    dependencies=[Depends(get_current_user)],
+)
+
+
+HistoryPeriod = Literal["5d", "1mo", "3mo", "6mo", "ytd", "1y", "2y", "5y"]
+
+
+@router.get("", response_model=list[StockInfo])
+def list_stocks() -> list[StockInfo]:
+    """The fixed three-stock universe served by the app."""
+    return list(STOCK_UNIVERSE)
 
 
 @router.get("/{symbol}/history", response_model=StockHistory)
 def history(
     symbol: str,
-    period: str = Query(default=None, description="yfinance period, e.g. 1y, 6mo"),
+    period: Annotated[
+        HistoryPeriod | None, Query(description="yfinance period, e.g. 1y, 6mo")
+    ] = None,
 ) -> StockHistory:
     resolved_period = period or get_settings().default_history_period
     try:
@@ -45,9 +59,23 @@ def history(
         ) from exc
 
 
+@router.get("/{symbol}/news", response_model=list[NewsItem])
+def news(
+    symbol: str, limit: Annotated[int, Query(ge=1, le=10)] = 4
+) -> list[NewsItem]:
+    """Recent headlines. Provider problems return an empty list, never an error."""
+    try:
+        normalized = ensure_supported(symbol)
+    except InvalidSymbolError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)
+        ) from exc
+    return news_service.get_news(normalized, limit)
+
+
 @router.post("/{symbol}/predict", response_model=Prediction)
 def predict(
-    symbol: str, db: Annotated[Session, Depends(get_db)]
+    symbol: str, user: CurrentUser, db: Annotated[Session, Depends(get_db)]
 ) -> Prediction:
     try:
         normalized = ensure_supported(symbol)
@@ -83,14 +111,15 @@ def predict(
         ) from exc
 
     record = PredictionRecord(
+        user_id=user.id,
         symbol=prediction.symbol,
         forecast_horizon=prediction.forecast_horizon,
         last_observed_date=prediction.last_observed_date,
         last_observed_close=prediction.last_observed_close,
         forecast_date=prediction.forecast_date,
         predicted_close=prediction.predicted_close,
-        model_name=MODEL_NAME,
-        model_version=MODEL_VERSION,
+        model_name=prediction.model_name,
+        model_version=prediction.model_version,
     )
     try:
         db.add(record)

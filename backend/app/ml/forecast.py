@@ -56,4 +56,5 @@ def build_prediction(
         forecast_date=forecast_date.isoformat(),
         predicted_close=round(predicted, 2),
         model_name=MODEL_NAME,
+        model_version=MODEL_VERSION,
     )

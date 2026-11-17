@@ -1,7 +1,14 @@
-export interface HealthResponse {
-  status: string
-  service: string
-  version: string
+export type StockRole = 'Safe' | 'Volatile' | 'Defensive'
+
+export interface StockInfo {
+  symbol: string
+  name: string
+  role: StockRole
+  description: string
+}
+
+export interface WatchlistEntry extends StockInfo {
+  added_at: string
 }
 
 export interface PricePoint {
@@ -23,5 +30,49 @@ export interface Prediction {
   forecast_date: string
   predicted_close: number
   model_name: string
+  model_version: string | null
   disclaimer: string
+}
+
+export interface SavedPrediction {
+  id: number
+  symbol: string
+  forecast_horizon: string
+  last_observed_date: string
+  last_observed_close: number
+  forecast_date: string
+  predicted_close: number
+  model_name: string
+  model_version: string | null
+  created_at: string
+}
+
+export interface NewsItem {
+  title: string
+  publisher: string | null
+  url: string
+  published_at: string | null
+  thumbnail: string | null
+}
+
+export interface User {
+  id: number
+  email: string
+  display_name: string | null
+  created_at: string
+}
+
+export interface TokenResponse {
+  access_token: string
+  token_type: 'bearer'
+  user: User
+}
+
+export interface LoginPayload {
+  email: string
+  password: string
+}
+
+export interface RegisterPayload extends LoginPayload {
+  display_name?: string | null
 }
