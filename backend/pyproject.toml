@@ -1,7 +1,7 @@
 [project]
 name = "backend"
 version = "0.1.0"
-description = "FastAPI backend for the stock predictor app"
+description = "FastAPI backend for the PrognoStock app"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
