@@ -1,6 +1,6 @@
 # Backend (FastAPI)
 
-Python API for the stock predictor. Requires Python 3.12+ and `uv`.
+Python API for PrognoStock. Requires Python 3.12+ and `uv`.
 
 ## Setup
 
@@ -169,7 +169,7 @@ add this frontmatter to a copy of this README:
 
 ```yaml
 ---
-title: Stock Predictor API
+title: PrognoStock API
 sdk: docker
 app_port: 7860
 ---

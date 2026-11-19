@@ -16,7 +16,7 @@ export function Wordmark({ className }: { className?: string }) {
         <ChartSpline aria-hidden className="size-4.5" strokeWidth={2.25} />
       </span>
       <span className="text-[15px]">
-        Stock<span className="text-brand">Predictor</span>
+        Progno<span className="text-brand">Stock</span>
       </span>
     </Link>
   )
