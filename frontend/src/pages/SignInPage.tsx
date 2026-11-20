@@ -9,6 +9,7 @@ import { z } from 'zod'
 import { AuthLayout } from '@/components/auth/AuthLayout'
 import { FormAlert } from '@/components/auth/FormAlert'
 import { PasswordInput } from '@/components/auth/PasswordInput'
+import { SocialSignIn } from '@/components/auth/SocialSignIn'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -33,7 +34,7 @@ type Values = z.infer<typeof schema>
 
 export function SignInPage() {
   usePageTitle('Sign in')
-  const { login } = useAuth()
+  const { login, signInWithGoogle } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const [serverError, setServerError] = useState<string | null>(null)
@@ -58,6 +59,19 @@ export function SignInPage() {
     }
   }
 
+  async function onGoogleCredential(credential: string) {
+    setServerError(null)
+    try {
+      const user = await signInWithGoogle(credential)
+      toast.success(`Welcome back${user.display_name ? `, ${user.display_name}` : ''}`)
+      navigate(redirectTarget(location.state), { replace: true })
+    } catch (error) {
+      const message = errorText(error, 'Could not sign in with Google')
+      setServerError(message)
+      toast.error(message)
+    }
+  }
+
   return (
     <AuthLayout
       title="Sign in"
@@ -75,6 +89,12 @@ export function SignInPage() {
         </>
       }
     >
+      <SocialSignIn
+        mode="sign-in"
+        redirectTo={redirectTarget(location.state)}
+        onGoogleCredential={onGoogleCredential}
+        onError={setServerError}
+      />
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} noValidate className="space-y-5">
           <FormAlert message={serverError} />

@@ -1,4 +1,5 @@
 export const queryKeys = {
+  authProviders: ['auth-providers'] as const,
   stocks: ['stocks'] as const,
   history: (symbol: string, period: string) => ['history', symbol, period] as const,
   predictions: ['predictions'] as const,

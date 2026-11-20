@@ -54,3 +54,19 @@ class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user: UserOut
+
+
+class AuthProviders(BaseModel):
+    """Public client IDs for the sign-in buttons; null hides a provider."""
+
+    google_client_id: str | None
+    github_client_id: str | None
+
+
+class GoogleSignInRequest(BaseModel):
+    credential: str = Field(min_length=1, max_length=4096)
+
+
+class GitHubSignInRequest(BaseModel):
+    code: str = Field(min_length=1, max_length=512)
+    redirect_uri: str = Field(min_length=1, max_length=2048)

@@ -1,5 +1,6 @@
 import { clearToken, getToken } from '@/lib/auth-token'
 import type {
+  AuthProviders,
   LoginPayload,
   NewsItem,
   Prediction,
@@ -112,6 +113,15 @@ export const api = {
       request<TokenResponse>('/auth/login', { method: 'POST', body: payload }),
     me: (signal?: AbortSignal) => request<User>('/auth/me', { signal }),
     logout: () => request<void>('/auth/logout', { method: 'POST' }),
+    providers: (signal?: AbortSignal) =>
+      request<AuthProviders>('/auth/providers', { signal }),
+    google: (credential: string) =>
+      request<TokenResponse>('/auth/google', { method: 'POST', body: { credential } }),
+    github: (code: string, redirectUri: string) =>
+      request<TokenResponse>('/auth/github', {
+        method: 'POST',
+        body: { code, redirect_uri: redirectUri },
+      }),
   },
 
   stocks: (signal?: AbortSignal) => request<StockInfo[]>('/stocks', { signal }),
