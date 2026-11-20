@@ -89,6 +89,30 @@ jobs:
           echo "::error::API did not become healthy within 5 minutes"
           exit 1
 
+      - name: Smoke test deployed API
+        id: smoke
+        working-directory: ${{ github.workspace }}
+        timeout-minutes: 8
+        env:
+          API_URL: ${{ steps.endpoint.outputs.api_url }}
+          SMOKE_EMAIL: ${{ secrets.SMOKE_EMAIL }}
+          SMOKE_PASSWORD: ${{ secrets.SMOKE_PASSWORD }}
+          HTTP_TIMEOUT: "60"
+          PREDICT_TIMEOUT: "300"
+        run: |
+          set -o pipefail
+          test -n "$SMOKE_EMAIL" || { echo "::error::Missing SMOKE_EMAIL environment secret"; exit 1; }
+          test -n "$SMOKE_PASSWORD" || { echo "::error::Missing SMOKE_PASSWORD environment secret"; exit 1; }
+          bash scripts/smoke.sh 2>&1 | tee smoke.log
+
+      - name: Upload smoke log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-log-${{ github.run_id }}
+          path: smoke.log
+          if-no-files-found: ignore
+
       - name: Failure rollback
         if: failure()
         env:
