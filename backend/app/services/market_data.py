@@ -59,7 +59,7 @@ def get_stock_info(symbol: str) -> StockInfo:
 
 
 def get_history(symbol: str, period: str = "1y") -> StockHistory:
-    normalized = ensure_supported(symbol)
+    normalized = normalize_symbol(symbol)
 
     try:
         frame = yf.Ticker(normalized).history(

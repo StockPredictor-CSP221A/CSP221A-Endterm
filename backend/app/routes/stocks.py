@@ -2,13 +2,13 @@ import logging
 from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import Session
 
 from app.config import get_settings
-from app.core.deps import CurrentUser, get_current_user
-from app.db.session import get_db
+from app.core.deps import CurrentUser, DbSession, get_current_user
 from app.db_models.prediction import PredictionRecord
+from app.db_models.watchlist import WatchlistItem
 from app.ml.forecast import InsufficientHistoryError, build_prediction
 from app.ml.timesfm import get_forecaster
 from app.schemas.news import NewsItem
@@ -16,9 +16,10 @@ from app.schemas.stock import Prediction, StockHistory, StockInfo
 from app.services import news as news_service
 from app.services.market_data import (
     STOCK_UNIVERSE,
+    SUPPORTED_SYMBOLS,
     InvalidSymbolError,
-    ensure_supported,
     get_history,
+    normalize_symbol,
 )
 
 logger = logging.getLogger(__name__)
@@ -33,6 +34,42 @@ router = APIRouter(
 HistoryPeriod = Literal["5d", "1mo", "3mo", "6mo", "ytd", "1y", "2y", "5y"]
 
 
+def tracked_symbol(symbol: str, user: CurrentUser, db: DbSession) -> str:
+    try:
+        normalized = normalize_symbol(symbol)
+    except InvalidSymbolError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)
+        ) from exc
+
+    if normalized in SUPPORTED_SYMBOLS:
+        return normalized
+
+    try:
+        watched = db.scalar(
+            select(WatchlistItem.id).where(
+                WatchlistItem.user_id == user.id,
+                WatchlistItem.symbol == normalized,
+            )
+        )
+    except SQLAlchemyError as exc:
+        logger.exception("Could not check watchlist access for %s", normalized)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Database unavailable",
+        ) from exc
+
+    if watched is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Add {normalized} to your watchlist first.",
+        )
+    return normalized
+
+
+TrackedSymbol = Annotated[str, Depends(tracked_symbol)]
+
+
 @router.get("", response_model=list[StockInfo])
 def list_stocks() -> list[StockInfo]:
     """The fixed three-stock universe served by the app."""
@@ -41,7 +78,7 @@ def list_stocks() -> list[StockInfo]:
 
 @router.get("/{symbol}/history", response_model=StockHistory)
 def history(
-    symbol: str,
+    symbol: TrackedSymbol,
     period: Annotated[
         HistoryPeriod | None, Query(description="yfinance period, e.g. 1y, 6mo")
     ] = None,
@@ -61,31 +98,16 @@ def history(
 
 @router.get("/{symbol}/news", response_model=list[NewsItem])
 def news(
-    symbol: str, limit: Annotated[int, Query(ge=1, le=10)] = 4
+    symbol: TrackedSymbol, limit: Annotated[int, Query(ge=1, le=10)] = 4
 ) -> list[NewsItem]:
     """Recent headlines. Provider problems return an empty list, never an error."""
-    try:
-        normalized = ensure_supported(symbol)
-    except InvalidSymbolError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)
-        ) from exc
-    return news_service.get_news(normalized, limit)
+    return news_service.get_news(symbol, limit)
 
 
 @router.post("/{symbol}/predict", response_model=Prediction)
-def predict(
-    symbol: str, user: CurrentUser, db: Annotated[Session, Depends(get_db)]
-) -> Prediction:
+def predict(symbol: TrackedSymbol, user: CurrentUser, db: DbSession) -> Prediction:
     try:
-        normalized = ensure_supported(symbol)
-    except InvalidSymbolError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)
-        ) from exc
-
-    try:
-        stock_history = get_history(normalized, period="5y")
+        stock_history = get_history(symbol, period="5y")
     except InvalidSymbolError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)
@@ -96,18 +118,16 @@ def predict(
         ) from exc
 
     try:
-        prediction = build_prediction(
-            normalized, stock_history.prices, get_forecaster()
-        )
+        prediction = build_prediction(symbol, stock_history.prices, get_forecaster())
     except InsufficientHistoryError as exc:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)
         ) from exc
     except Exception as exc:
-        logger.exception("Forecast failed for %s", normalized)
+        logger.exception("Forecast failed for %s", symbol)
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=f"Forecast model error for {normalized}",
+            detail=f"Forecast model error for {symbol}",
         ) from exc
 
     record = PredictionRecord(
@@ -126,7 +146,7 @@ def predict(
         db.commit()
     except SQLAlchemyError as exc:
         db.rollback()
-        logger.exception("Could not persist prediction for %s", normalized)
+        logger.exception("Could not persist prediction for %s", symbol)
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Could not persist prediction",
