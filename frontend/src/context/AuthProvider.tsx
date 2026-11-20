@@ -72,6 +72,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [startSession],
   )
 
+  const updateProfile = useCallback(async (displayName: string | null) => {
+    const updated = await api.auth.updateProfile(displayName)
+    setUser(updated)
+    return updated
+  }, [])
+
+  const changeEmail = useCallback(async (newEmail: string, currentPassword: string) => {
+    const updated = await api.auth.changeEmail(newEmail, currentPassword)
+    setUser(updated)
+    return updated
+  }, [])
+
+  // The server signs out every other session and hands back a new token for
+  // this one, so swap it in without clearing cached data.
+  const changePassword = useCallback(
+    async (newPassword: string, currentPassword: string | null) => {
+      const response = await api.auth.changePassword(newPassword, currentPassword)
+      setToken(response.access_token)
+      setUser(response.user)
+      return response.user
+    },
+    [],
+  )
+
+  const deleteAccount = useCallback(
+    async (confirmEmail: string, currentPassword: string | null) => {
+      await api.auth.deleteAccount(confirmEmail, currentPassword)
+      endSession()
+    },
+    [endSession],
+  )
+
   const logout = useCallback(() => {
     void api.auth.logout().catch(() => undefined)
     endSession()
@@ -86,9 +118,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       register,
       signInWithGoogle,
       signInWithGitHub,
+      updateProfile,
+      changeEmail,
+      changePassword,
+      deleteAccount,
       logout,
     }),
-    [user, isLoading, login, register, signInWithGoogle, signInWithGitHub, logout],
+    [
+      user,
+      isLoading,
+      login,
+      register,
+      signInWithGoogle,
+      signInWithGitHub,
+      updateProfile,
+      changeEmail,
+      changePassword,
+      deleteAccount,
+      logout,
+    ],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
