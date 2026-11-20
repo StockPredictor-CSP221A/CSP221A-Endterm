@@ -1,4 +1,3 @@
-import { ChartSpline } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 import { cn } from '@/lib/utils'
@@ -12,11 +11,9 @@ export function Wordmark({ className }: { className?: string }) {
         className,
       )}
     >
-      <span className="flex size-8 items-center justify-center rounded-lg bg-brand text-primary-foreground">
-        <ChartSpline aria-hidden className="size-4.5" strokeWidth={2.25} />
-      </span>
+      <img src="/star-logo.svg" alt="" aria-hidden className="size-8" />
       <span className="text-[15px]">
-        Stock<span className="text-brand">Predictor</span>
+        Progno<span className="text-brand">Stock</span>
       </span>
     </Link>
   )

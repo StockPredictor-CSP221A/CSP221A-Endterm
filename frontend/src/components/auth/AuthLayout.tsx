@@ -13,7 +13,7 @@ interface AuthLayoutProps {
 
 const HIGHLIGHTS = [
   'Google TimesFM 2.5, zero-shot, one trading day ahead',
-  'Benchmarked against a naive baseline on 2025 SPY data',
+  'Tested out-of-sample on a full year of SPY data (2025)',
   'Forecast history and watchlist saved to your account',
 ]
 

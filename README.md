@@ -1,4 +1,4 @@
-# Stock Predictor
+# PrognoStock
 
 A stock-tracking web app with a next-day closing-price forecast from Google
 TimesFM 2.5 for `SPY`, `NVDA`, and `KO`. Users sign in with email and password to

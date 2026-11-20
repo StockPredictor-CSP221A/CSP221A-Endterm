@@ -73,6 +73,11 @@ export interface LoginPayload {
   password: string
 }
 
+export interface AuthProviders {
+  google_client_id: string | null
+  github_client_id: string | null
+}
+
 export interface RegisterPayload extends LoginPayload {
   display_name?: string | null
 }

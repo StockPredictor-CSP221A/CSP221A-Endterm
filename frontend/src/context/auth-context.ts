@@ -8,6 +8,8 @@ export interface AuthContextValue {
   isAuthenticated: boolean
   login: (payload: LoginPayload) => Promise<User>
   register: (payload: RegisterPayload) => Promise<User>
+  signInWithGoogle: (credential: string) => Promise<User>
+  signInWithGitHub: (code: string, redirectUri: string) => Promise<User>
   logout: () => void
 }
 

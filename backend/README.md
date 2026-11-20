@@ -1,6 +1,6 @@
 # Backend (FastAPI)
 
-Python API for the stock predictor. Requires Python 3.12+ and `uv`.
+Python API for PrognoStock. Requires Python 3.12+ and `uv`.
 
 ## Setup
 
@@ -48,6 +48,9 @@ Argon2 (`pwdlib`); sessions are stateless HS256 JWT bearer tokens with `sub`
 | `POST` | `/api/auth/login` | public | `{email, password}`; `401` with a generic message on bad credentials |
 | `GET` | `/api/auth/me` | bearer | `{id, email, display_name, created_at}` |
 | `POST` | `/api/auth/logout` | public | `204`; the client discards its token |
+| `GET` | `/api/auth/providers` | public | `{google_client_id, github_client_id}`; `null` hides that button |
+| `POST` | `/api/auth/google` | public | `{credential}` from the Google button; `401` if the token is invalid |
+| `POST` | `/api/auth/github` | public | `{code, redirect_uri}` from the GitHub callback; `400` if `redirect_uri` is not an allowed origin |
 
 Register and login return `{access_token, token_type: "bearer", user}`.
 Protected endpoints answer `401` with `WWW-Authenticate: Bearer` when the token
@@ -62,6 +65,25 @@ Settings (see `.env.example`):
   survive restarts.
 - `JWT_ALGORITHM` — default `HS256`.
 - `ACCESS_TOKEN_EXPIRE_MINUTES` — default `10080` (7 days).
+
+### Google and GitHub sign-in
+
+Each provider is optional and shows up on the sign-in page only when its
+settings are filled in. A first social sign-in creates an account with no
+password and records the provider's user ID in `oauth_accounts`. Google and
+GitHub accounts with the same verified email share one user. If the email
+already belongs to a password account, the API answers `409` instead of
+linking, because password sign-up does not prove ownership of the email.
+
+- `GOOGLE_CLIENT_ID` — Google Cloud console → APIs & Services → Credentials →
+  Create OAuth client ID → Web application. Add every frontend origin (for
+  example `http://localhost:5173` and the Vercel domain) under *Authorized
+  JavaScript origins*. No redirect URI or secret is needed.
+- `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` — GitHub → Settings → Developer
+  settings → OAuth Apps → New OAuth App. Set *Authorization callback URL* to
+  `<frontend origin>/auth/github/callback`. GitHub allows one callback URL per
+  app, so create one app for local development and one for production. The
+  frontend origin must also be listed in `CORS_ORIGINS`.
 
 Tests run against an in-memory SQLite database through a `get_db` dependency
 override (`tests/conftest.py`); they never touch Neon.
@@ -169,7 +191,7 @@ add this frontmatter to a copy of this README:
 
 ```yaml
 ---
-title: Stock Predictor API
+title: PrognoStock API
 sdk: docker
 app_port: 7860
 ---

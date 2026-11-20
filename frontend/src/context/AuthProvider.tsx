@@ -61,6 +61,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [startSession],
   )
 
+  const signInWithGoogle = useCallback(
+    async (credential: string) => startSession(await api.auth.google(credential)),
+    [startSession],
+  )
+
+  const signInWithGitHub = useCallback(
+    async (code: string, redirectUri: string) =>
+      startSession(await api.auth.github(code, redirectUri)),
+    [startSession],
+  )
+
   const logout = useCallback(() => {
     void api.auth.logout().catch(() => undefined)
     endSession()
@@ -73,9 +84,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isAuthenticated: user !== null,
       login,
       register,
+      signInWithGoogle,
+      signInWithGitHub,
       logout,
     }),
-    [user, isLoading, login, register, logout],
+    [user, isLoading, login, register, signInWithGoogle, signInWithGitHub, logout],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
