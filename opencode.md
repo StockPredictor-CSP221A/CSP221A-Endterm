@@ -1,4 +1,4 @@
-# Stock Predictor — Project Brief
+# PrognoStock — Project Brief
 
 Academic project, four weekly sprints. Build an original stock-tracking web app
 whose **Predict Stock** action returns a real ML forecast. This is a demo, not a

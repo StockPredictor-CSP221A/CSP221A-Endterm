@@ -1,7 +1,7 @@
 [project]
 name = "backend"
 version = "0.1.0"
-description = "FastAPI backend for the stock predictor app"
+description = "FastAPI backend for the PrognoStock app"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
@@ -13,10 +13,10 @@ dependencies = [
     "psycopg[binary]>=3.3.6",
     "pwdlib[argon2]>=0.3.1",
     "pydantic-settings>=2.16.0",
-    "pyjwt>=2.15.1",
+    "pyjwt[crypto]>=2.15.1",
     "sqlalchemy>=2.0",
     "uvicorn[standard]>=0.54.0",
-    "yfinance>=1.7.0",
+    "yfinance>=1.8.0",
 ]
 
 [project.optional-dependencies]

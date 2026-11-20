@@ -1,6 +1,6 @@
 # Frontend (Vite + React + TypeScript)
 
-SPA for the stock predictor: React 19, Tailwind CSS v4, shadcn/ui (Radix),
+SPA for PrognoStock: React 19, Tailwind CSS v4, shadcn/ui (Radix),
 React Router, TanStack Query, react-hook-form + zod, and Recharts through the
 shadcn chart wrapper.
 

@@ -15,6 +15,10 @@ const WatchlistPage = named(() => import('@/pages/WatchlistPage'), 'WatchlistPag
 const HistoryPage = named(() => import('@/pages/HistoryPage'), 'HistoryPage')
 const SignInPage = named(() => import('@/pages/SignInPage'), 'SignInPage')
 const SignUpPage = named(() => import('@/pages/SignUpPage'), 'SignUpPage')
+const GitHubCallbackPage = named(
+  () => import('@/pages/GitHubCallbackPage'),
+  'GitHubCallbackPage',
+)
 
 export function App() {
   return (
@@ -24,6 +28,7 @@ export function App() {
           <Route path="sign-in" element={<SignInPage />} />
           <Route path="sign-up" element={<SignUpPage />} />
         </Route>
+        <Route path="auth/github/callback" element={<GitHubCallbackPage />} />
         <Route element={<ProtectedRoute />}>
           <Route element={<AppShell />}>
             <Route index element={<DashboardPage />} />

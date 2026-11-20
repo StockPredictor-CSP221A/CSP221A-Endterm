@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 
-const APP_NAME = 'Stock Predictor'
+const APP_NAME = 'PrognoStock'
 
 export function usePageTitle(title: string): void {
   useEffect(() => {
