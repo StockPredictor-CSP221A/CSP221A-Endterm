@@ -1,5 +1,6 @@
 import math
 import re
+from collections.abc import Mapping
 
 import yfinance as yf
 
@@ -58,7 +59,7 @@ def get_stock_info(symbol: str) -> StockInfo:
 
 
 def get_history(symbol: str, period: str = "1y") -> StockHistory:
-    normalized = ensure_supported(symbol)
+    normalized = normalize_symbol(symbol)
 
     try:
         frame = yf.Ticker(normalized).history(
@@ -83,3 +84,55 @@ def get_history(symbol: str, period: str = "1y") -> StockHistory:
         raise InvalidSymbolError(f"No usable closing prices for {normalized}")
 
     return StockHistory(symbol=normalized, interval="1d", prices=prices)
+
+
+def _has_usable_close(frame: object) -> bool:
+    if frame is None or not hasattr(frame, "empty") or frame.empty:
+        return False
+    if "Close" not in frame:
+        return False
+    for close in frame["Close"]:
+        try:
+            value = float(close)
+        except (TypeError, ValueError):
+            continue
+        if math.isfinite(value):
+            return True
+    return False
+
+
+def _ticker_name(ticker: object, symbol: str) -> str:
+    try:
+        info = ticker.info
+    except Exception:  # name lookup must never block adding a real ticker
+        return symbol
+    if not isinstance(info, Mapping):
+        return symbol
+    for key in ("shortName", "longName"):
+        value = info.get(key)
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    return symbol
+
+
+def lookup_watchlist_symbol(symbol: str) -> str:
+    """Validate a custom ticker and return a display name.
+
+    Raises InvalidSymbolError when the provider has no usable data and
+    RuntimeError when the provider/network call itself fails.
+    """
+    normalized = normalize_symbol(symbol)
+    try:
+        ticker = yf.Ticker(normalized)
+        frame = ticker.history(
+            period="1mo", interval="1d", auto_adjust=False, actions=False
+        )
+    except Exception as exc:  # provider/network failure
+        raise RuntimeError(
+            f"Market data provider error for {normalized}"
+        ) from exc
+
+    if not _has_usable_close(frame):
+        raise InvalidSymbolError(f"No market data found for {normalized}")
+
+    return _ticker_name(ticker, normalized)

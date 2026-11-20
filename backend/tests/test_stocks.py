@@ -19,11 +19,12 @@ def test_list_stocks_requires_auth(client: TestClient) -> None:
     assert client.get("/api/stocks").status_code == 401
 
 
-def test_history_rejects_unsupported_symbol(
+def test_history_rejects_untracked_symbol(
     client: TestClient, user_headers: dict[str, str]
 ) -> None:
     res = client.get("/api/stocks/AAPL/history", headers=user_headers)
     assert res.status_code == 404
+    assert res.json()["detail"] == "Add AAPL to your watchlist first."
 
 
 def test_history_rejects_unknown_period(
@@ -49,7 +50,7 @@ def test_history_passes_period(
     monkeypatch.setattr("app.routes.stocks.get_history", fake_history)
     res = client.get("/api/stocks/spy/history?period=3mo", headers=user_headers)
     assert res.status_code == 200
-    assert seen == {"symbol": "spy", "period": "3mo"}
+    assert seen == {"symbol": "SPY", "period": "3mo"}
 
 
 def test_get_stock_info() -> None:
