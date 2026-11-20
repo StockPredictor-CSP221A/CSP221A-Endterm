@@ -10,6 +10,10 @@ export interface AuthContextValue {
   register: (payload: RegisterPayload) => Promise<User>
   signInWithGoogle: (credential: string) => Promise<User>
   signInWithGitHub: (code: string, redirectUri: string) => Promise<User>
+  updateProfile: (displayName: string | null) => Promise<User>
+  changeEmail: (newEmail: string, currentPassword: string) => Promise<User>
+  changePassword: (newPassword: string, currentPassword: string | null) => Promise<User>
+  deleteAccount: (confirmEmail: string, currentPassword: string | null) => Promise<void>
   logout: () => void
 }
 
