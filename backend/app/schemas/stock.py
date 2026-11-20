@@ -7,6 +7,18 @@ class HealthResponse(BaseModel):
     version: str
 
 
+class DatabaseHealth(BaseModel):
+    status: str
+    database: str
+
+
+class StockInfo(BaseModel):
+    symbol: str
+    name: str
+    role: str
+    description: str
+
+
 class PricePoint(BaseModel):
     date: str
     close: float
@@ -26,6 +38,7 @@ class Prediction(BaseModel):
     forecast_date: str
     predicted_close: float
     model_name: str
+    model_version: str | None = None
     disclaimer: str = Field(
         default="Forecasts are uncertain and are not financial advice."
     )

@@ -1,0 +1,20 @@
+
+[2026-10-20T13:43:52.494019+00:00] START chronos2
+/Users/mikkel/Desktop/cswork/class/AI/CSP221A-Endterm/experiments/.venv/bin/python3 -m benchmark.worker --config /Users/mikkel/Desktop/cswork/class/AI/CSP221A-Endterm/experiments/configs/benchmark_spy.json --data /Users/mikkel/Desktop/cswork/class/AI/CSP221A-Endterm/data/SPY_clean.csv --split validation --model chronos2 --result-json /Users/mikkel/Desktop/cswork/class/AI/CSP221A-Endterm/experiments/results/spy_2015_2025/validation_20261020T134352Z/models/chronos2.json --predictions-csv /Users/mikkel/Desktop/cswork/class/AI/CSP221A-Endterm/experiments/results/spy_2015_2025/validation_20261020T134352Z/predictions/chronos2__SPY.csv
+W1020 21:43:54.232000 5378 .venv/lib/python3.12/site-packages/torch/distributed/elastic/multiprocessing/redirects.py:35] NOTE: Redirects are currently not supported in MacOs.
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights:   0%|          | 0/170 [00:00<?, ?it/s]Loading weights: 100%|██████████| 170/170 [00:00<00:00, 25568.60it/s]
+{"model": "chronos2", "rows": 252, "status": "ok"}
+[2026-10-20T13:44:04.549859+00:00] END chronos2 exit=0 wall=12.06s
+
+[2026-10-20T13:44:04.551912+00:00] START timesfm
+/Users/mikkel/Desktop/cswork/class/AI/CSP221A-Endterm/experiments/.venv/bin/python3 -m benchmark.worker --config /Users/mikkel/Desktop/cswork/class/AI/CSP221A-Endterm/experiments/configs/benchmark_spy.json --data /Users/mikkel/Desktop/cswork/class/AI/CSP221A-Endterm/data/SPY_clean.csv --split validation --model timesfm --result-json /Users/mikkel/Desktop/cswork/class/AI/CSP221A-Endterm/experiments/results/spy_2015_2025/validation_20261020T134352Z/models/timesfm.json --predictions-csv /Users/mikkel/Desktop/cswork/class/AI/CSP221A-Endterm/experiments/results/spy_2015_2025/validation_20261020T134352Z/predictions/timesfm__SPY.csv
+{"model": "timesfm", "rows": 252, "status": "ok"}
+[2026-10-20T13:44:30.900825+00:00] END timesfm exit=0 wall=26.35s
+
+[2026-10-20T13:44:30.902382+00:00] START naive
+/Users/mikkel/Desktop/cswork/class/AI/CSP221A-Endterm/experiments/.venv/bin/python3 -m benchmark.worker --config /Users/mikkel/Desktop/cswork/class/AI/CSP221A-Endterm/experiments/configs/benchmark_spy.json --data /Users/mikkel/Desktop/cswork/class/AI/CSP221A-Endterm/data/SPY_clean.csv --split validation --model naive --result-json /Users/mikkel/Desktop/cswork/class/AI/CSP221A-Endterm/experiments/results/spy_2015_2025/validation_20261020T134352Z/models/naive.json --predictions-csv /Users/mikkel/Desktop/cswork/class/AI/CSP221A-Endterm/experiments/results/spy_2015_2025/validation_20261020T134352Z/predictions/naive__SPY.csv
+{"model": "naive", "rows": 252, "status": "ok"}
+[2026-10-20T13:44:31.091465+00:00] END naive exit=0 wall=0.19s
+
+[2026-10-20T13:44:40.799294+00:00] COMPLETE validation

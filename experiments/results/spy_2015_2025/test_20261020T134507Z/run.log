@@ -1,0 +1,19 @@
+
+[2026-10-20T13:45:07.463648+00:00] START chronos2
+/Users/mikkel/Desktop/cswork/class/AI/CSP221A-Endterm/experiments/.venv/bin/python3 -m benchmark.worker --config /Users/mikkel/Desktop/cswork/class/AI/CSP221A-Endterm/experiments/configs/benchmark_spy.json --data /Users/mikkel/Desktop/cswork/class/AI/CSP221A-Endterm/data/SPY_clean.csv --split test --model chronos2 --result-json /Users/mikkel/Desktop/cswork/class/AI/CSP221A-Endterm/experiments/results/spy_2015_2025/test_20261020T134507Z/models/chronos2.json --predictions-csv /Users/mikkel/Desktop/cswork/class/AI/CSP221A-Endterm/experiments/results/spy_2015_2025/test_20261020T134507Z/predictions/chronos2__SPY.csv
+W1020 21:45:10.058000 6686 .venv/lib/python3.12/site-packages/torch/distributed/elastic/multiprocessing/redirects.py:35] NOTE: Redirects are currently not supported in MacOs.
+Loading weights:   0%|          | 0/170 [00:00<?, ?it/s]Loading weights: 100%|██████████| 170/170 [00:00<00:00, 4711.11it/s]
+{"model": "chronos2", "rows": 250, "status": "ok"}
+[2026-10-20T13:45:22.083370+00:00] END chronos2 exit=0 wall=14.62s
+
+[2026-10-20T13:45:22.088598+00:00] START timesfm
+/Users/mikkel/Desktop/cswork/class/AI/CSP221A-Endterm/experiments/.venv/bin/python3 -m benchmark.worker --config /Users/mikkel/Desktop/cswork/class/AI/CSP221A-Endterm/experiments/configs/benchmark_spy.json --data /Users/mikkel/Desktop/cswork/class/AI/CSP221A-Endterm/data/SPY_clean.csv --split test --model timesfm --result-json /Users/mikkel/Desktop/cswork/class/AI/CSP221A-Endterm/experiments/results/spy_2015_2025/test_20261020T134507Z/models/timesfm.json --predictions-csv /Users/mikkel/Desktop/cswork/class/AI/CSP221A-Endterm/experiments/results/spy_2015_2025/test_20261020T134507Z/predictions/timesfm__SPY.csv
+{"model": "timesfm", "rows": 250, "status": "ok"}
+[2026-10-20T13:45:53.233869+00:00] END timesfm exit=0 wall=31.14s
+
+[2026-10-20T13:45:53.235812+00:00] START naive
+/Users/mikkel/Desktop/cswork/class/AI/CSP221A-Endterm/experiments/.venv/bin/python3 -m benchmark.worker --config /Users/mikkel/Desktop/cswork/class/AI/CSP221A-Endterm/experiments/configs/benchmark_spy.json --data /Users/mikkel/Desktop/cswork/class/AI/CSP221A-Endterm/data/SPY_clean.csv --split test --model naive --result-json /Users/mikkel/Desktop/cswork/class/AI/CSP221A-Endterm/experiments/results/spy_2015_2025/test_20261020T134507Z/models/naive.json --predictions-csv /Users/mikkel/Desktop/cswork/class/AI/CSP221A-Endterm/experiments/results/spy_2015_2025/test_20261020T134507Z/predictions/naive__SPY.csv
+{"model": "naive", "rows": 250, "status": "ok"}
+[2026-10-20T13:45:53.524714+00:00] END naive exit=0 wall=0.29s
+
+[2026-10-20T13:45:53.889831+00:00] COMPLETE test

@@ -1,0 +1,97 @@
+name: Backend Deployment
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, dev]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-backend-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Modal (${{ github.ref_name == 'main' && 'production' || 'preview' }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment:
+      name: ${{ github.ref_name == 'main' && 'production' || 'preview' }}
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      MODAL_ENVIRONMENT: ${{ github.ref_name == 'main' && 'main' || 'preview' }}
+      FALLBACK_API_URL: ${{ github.ref_name == 'main' && vars.PROD_API_URL || vars.PREVIEW_API_URL }}
+      
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v4
+
+      - name: Set Up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Modal CLI
+        run: |
+          python -m pip install --upgrade pip
+          pip install modal==1.6.4
+          modal --version
+
+      - name: Validate configuration
+        env:
+          MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
+          MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
+        run: |
+          test -n "$MODAL_TOKEN_ID" || { echo "::error::Missing MODAL_TOKEN_ID"; exit 1; }
+          test -n "$MODAL_TOKEN_SECRET" || { echo "::error::Missing MODAL_TOKEN_SECRET"; exit 1; }
+          test -n "$MODAL_ENVIRONMENT" || { echo "::error::No Modal environment resolved"; exit 1; }
+          echo "Target: Modal environment '$MODAL_ENVIRONMENT'"
+
+      - name: Deploy Backend
+        env:
+          MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
+          MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
+        run: |
+          set -o pipefail
+          modal deploy modal_app.py 2>&1 | tee deploy.log
+
+      - name: Resolve endpoint
+        id: endpoint
+        run: |
+          url=$(grep -Eo 'https://[A-Za-z0-9._-]+\.modal\.run' deploy.log | tail -n1)
+          url="${url:-$FALLBACK_API_URL}"
+          test -n "$url" || { echo "::error::Could not determine the Modal endpoint"; exit 1; }
+          echo "api_url=$url" >> "$GITHUB_OUTPUT"
+          {
+            echo "### Backend deployed"
+            echo "- branch: \`${{ github.ref_name }}\`"
+            echo "- Modal environment: \`$MODAL_ENVIRONMENT\`"
+            echo "- endpoint: $url"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Wait until the API serves
+        env:
+          API_URL: ${{ steps.endpoint.outputs.api_url }}
+        run: |
+          for i in $(seq 1 60); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 "$API_URL/api/health") || code=000
+            if [ "$code" = "200" ]; then
+              echo "healthy after $((i * 5))s: $(curl -s "$API_URL/api/health")"
+              exit 0
+            fi
+            echo "attempt $i: HTTP $code"
+            sleep 5
+          done
+          echo "::error::API did not become healthy within 5 minutes"
+          exit 1
+
+      - name: Failure rollback
+        if: failure()
+        env:
+          MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
+          MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
+        run: modal app rollback stock-predictor-api --strategy recreate || true

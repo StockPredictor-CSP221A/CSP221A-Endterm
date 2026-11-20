@@ -1,0 +1,37 @@
+[project]
+name = "stock-predictor-benchmark"
+version = "0.1.0"
+description = "Locked SPY foundation-model benchmark for the stock predictor project"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "chronos-forecasting==2.3.2",
+    "timesfm[torch]==3.0.2",
+    "torch>=2.2,<3",
+    "yfinance>=0.2.40",
+    "pandas>=2.0,<4",
+    "numpy>=1.26,<3",
+    "psutil>=6.0",
+    "huggingface-hub>=0.28",
+    "matplotlib>=3.8",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0,<9",
+    "ruff>=0.6",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.ruff.lint.per-file-ignores]
+"src/benchmark/worker.py" = ["E402"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
