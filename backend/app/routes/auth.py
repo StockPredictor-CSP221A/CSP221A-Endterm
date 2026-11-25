@@ -2,7 +2,7 @@ import logging
 from urllib.parse import urlsplit
 
 from fastapi import APIRouter, HTTPException, Response, status
-from sqlalchemy import delete, select
+from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 from app.config import get_settings
@@ -11,21 +11,15 @@ from app.core.security import (
     burn_password_check,
     create_access_token,
     hash_password,
-    password_stamp,
     verify_password,
 )
 from app.db_models.oauth_account import OAuthAccount
-from app.db_models.prediction import PredictionRecord
 from app.db_models.user import User
 from app.schemas.auth import (
     AuthProviders,
-    DeleteAccountRequest,
-    EmailChangeRequest,
     GitHubSignInRequest,
     GoogleSignInRequest,
     LoginRequest,
-    PasswordChangeRequest,
-    ProfileUpdate,
     RegisterRequest,
     TokenResponse,
     UserOut,
@@ -47,26 +41,10 @@ _DB_UNAVAILABLE = HTTPException(
 )
 
 
-def _user_out(user: User, db: DbSession) -> UserOut:
-    linked = db.scalars(
-        select(OAuthAccount.provider)
-        .where(OAuthAccount.user_id == user.id)
-        .order_by(OAuthAccount.provider)
-    ).all()
-    return UserOut.model_validate(user).model_copy(
-        update={
-            "has_password": user.hashed_password is not None,
-            "providers": list(linked),
-        }
-    )
-
-
-def _token_response(user: User, db: DbSession) -> TokenResponse:
+def _token_response(user: User) -> TokenResponse:
     return TokenResponse(
-        access_token=create_access_token(
-            user.id, stamp=password_stamp(user.hashed_password)
-        ),
-        user=_user_out(user, db),
+        access_token=create_access_token(user.id),
+        user=UserOut.model_validate(user),
     )
 
 
@@ -98,7 +76,7 @@ def register(body: RegisterRequest, db: DbSession) -> TokenResponse:
         logger.exception("Could not register user")
         raise _DB_UNAVAILABLE from exc
 
-    return _token_response(user, db)
+    return _token_response(user)
 
 
 @router.post("/login", response_model=TokenResponse)
@@ -124,7 +102,7 @@ def login(body: LoginRequest, db: DbSession) -> TokenResponse:
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    return _token_response(user, db)
+    return _token_response(user)
 
 
 GITHUB_CALLBACK_PATH = "/auth/github/callback"
@@ -178,7 +156,7 @@ def _sign_in_with(identity: ProviderIdentity, db: DbSession) -> TokenResponse:
             )
         )
         if user is not None:
-            return _token_response(user, db)
+            return _token_response(user)
 
         user = db.scalar(select(User).where(User.email == identity.email))
         if user is None:
@@ -208,7 +186,7 @@ def _sign_in_with(identity: ProviderIdentity, db: DbSession) -> TokenResponse:
         logger.exception("Could not sign in with %s", identity.provider)
         raise _DB_UNAVAILABLE from exc
 
-    return _token_response(user, db)
+    return _token_response(user)
 
 
 @router.post("/google", response_model=TokenResponse)
@@ -254,121 +232,8 @@ def github_sign_in(body: GitHubSignInRequest, db: DbSession) -> TokenResponse:
 
 
 @router.get("/me", response_model=UserOut)
-def me(user: CurrentUser, db: DbSession) -> UserOut:
-    try:
-        return _user_out(user, db)
-    except SQLAlchemyError as exc:
-        logger.exception("Could not load linked sign-in providers")
-        raise _DB_UNAVAILABLE from exc
-
-
-# Wrong current passwords answer 400, not 401: the session itself is valid,
-# and a 401 would sign the user out of the app.
-_WRONG_PASSWORD = HTTPException(
-    status_code=status.HTTP_400_BAD_REQUEST, detail="Current password is incorrect"
-)
-
-
-@router.patch("/me", response_model=UserOut)
-def update_profile(body: ProfileUpdate, user: CurrentUser, db: DbSession) -> UserOut:
-    try:
-        user.display_name = body.display_name
-        db.commit()
-        db.refresh(user)
-        return _user_out(user, db)
-    except SQLAlchemyError as exc:
-        db.rollback()
-        logger.exception("Could not update profile")
-        raise _DB_UNAVAILABLE from exc
-
-
-@router.post("/me/email", response_model=UserOut)
-def change_email(body: EmailChangeRequest, user: CurrentUser, db: DbSession) -> UserOut:
-    if user.hashed_password is None:
-        # A password-less email change could later let a Google or GitHub
-        # account with that address sign in here, so require a password first.
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Set a password before changing your email",
-        )
-    if not verify_password(body.current_password, user.hashed_password):
-        raise _WRONG_PASSWORD
-    if body.new_email == user.email:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="That is already your email",
-        )
-
-    taken = HTTPException(
-        status_code=status.HTTP_409_CONFLICT,
-        detail="An account with this email already exists",
-    )
-    try:
-        if db.scalar(select(User.id).where(User.email == body.new_email)) is not None:
-            raise taken
-        user.email = body.new_email
-        db.commit()
-        db.refresh(user)
-        return _user_out(user, db)
-    except IntegrityError as exc:
-        db.rollback()
-        raise taken from exc
-    except SQLAlchemyError as exc:
-        db.rollback()
-        logger.exception("Could not change email")
-        raise _DB_UNAVAILABLE from exc
-
-
-@router.post("/me/password", response_model=TokenResponse)
-def change_password(
-    body: PasswordChangeRequest, user: CurrentUser, db: DbSession
-) -> TokenResponse:
-    """Change the password, or set one on a Google or GitHub account.
-
-    Returns a fresh token: every other session is signed out.
-    """
-    if user.hashed_password is not None:
-        if not body.current_password or not verify_password(
-            body.current_password, user.hashed_password
-        ):
-            raise _WRONG_PASSWORD
-    try:
-        user.hashed_password = hash_password(body.new_password)
-        db.commit()
-        db.refresh(user)
-        return _token_response(user, db)
-    except SQLAlchemyError as exc:
-        db.rollback()
-        logger.exception("Could not change password")
-        raise _DB_UNAVAILABLE from exc
-
-
-@router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
-def delete_account(
-    body: DeleteAccountRequest, user: CurrentUser, db: DbSession
-) -> Response:
-    """Permanently delete the account and everything saved to it."""
-    if body.confirm_email != user.email:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Type your email exactly to confirm",
-        )
-    if user.hashed_password is not None and (
-        not body.current_password
-        or not verify_password(body.current_password, user.hashed_password)
-    ):
-        raise _WRONG_PASSWORD
-    try:
-        # Predictions only unlink on user delete (SET NULL), so remove them
-        # here. The watchlist and linked sign-ins cascade with the user.
-        db.execute(delete(PredictionRecord).where(PredictionRecord.user_id == user.id))
-        db.delete(user)
-        db.commit()
-    except SQLAlchemyError as exc:
-        db.rollback()
-        logger.exception("Could not delete account")
-        raise _DB_UNAVAILABLE from exc
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
+def me(user: CurrentUser) -> UserOut:
+    return UserOut.model_validate(user)
 
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)

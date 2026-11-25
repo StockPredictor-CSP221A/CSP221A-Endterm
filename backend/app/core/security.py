@@ -1,5 +1,3 @@
-import hashlib
-import hmac
 import logging
 import secrets
 from datetime import UTC, datetime, timedelta
@@ -51,34 +49,18 @@ def _signing_key() -> str:
     return get_settings().jwt_secret or _ephemeral_secret()
 
 
-def password_stamp(hashed_password: str | None) -> str:
-    """A short fingerprint of the stored password hash, carried in each token.
-
-    Changing or setting a password changes the stamp, which signs out every
-    session issued before the change.
-    """
-    message = (hashed_password or "").encode()
-    digest = hmac.new(_signing_key().encode(), message, hashlib.sha256)
-    return digest.hexdigest()[:16]
-
-
-def create_access_token(
-    user_id: int, *, stamp: str | None = None, now: datetime | None = None
-) -> str:
+def create_access_token(user_id: int, *, now: datetime | None = None) -> str:
     settings = get_settings()
     issued_at = now or datetime.now(UTC)
-    payload: dict[str, object] = {
+    payload = {
         "sub": str(user_id),
         "iat": issued_at,
         "exp": issued_at + timedelta(minutes=settings.access_token_expire_minutes),
     }
-    if stamp is not None:
-        payload["pwd"] = stamp
     return jwt.encode(payload, _signing_key(), algorithm=settings.jwt_algorithm)
 
 
-def decode_session(token: str) -> tuple[int, str | None]:
-    """Return the user ID and password stamp from a valid token."""
+def decode_access_token(token: str) -> int:
     settings = get_settings()
     try:
         payload = jwt.decode(
@@ -87,11 +69,6 @@ def decode_session(token: str) -> tuple[int, str | None]:
             algorithms=[settings.jwt_algorithm],
             options={"require": ["sub", "iat", "exp"]},
         )
-        stamp = payload.get("pwd")
-        return int(payload["sub"]), stamp if isinstance(stamp, str) else None
+        return int(payload["sub"])
     except (jwt.PyJWTError, ValueError, TypeError) as exc:
         raise InvalidTokenError("Invalid or expired token") from exc
-
-
-def decode_access_token(token: str) -> int:
-    return decode_session(token)[0]

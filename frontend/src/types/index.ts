@@ -60,8 +60,6 @@ export interface User {
   email: string
   display_name: string | null
   created_at: string
-  has_password: boolean
-  providers: Array<'google' | 'github'>
 }
 
 export interface TokenResponse {

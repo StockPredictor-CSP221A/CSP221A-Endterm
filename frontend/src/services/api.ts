@@ -58,7 +58,7 @@ async function errorMessage(res: Response): Promise<string> {
 }
 
 interface RequestOptions {
-  method?: 'GET' | 'POST' | 'PATCH' | 'DELETE'
+  method?: 'GET' | 'POST' | 'DELETE'
   body?: unknown
   signal?: AbortSignal
 }
@@ -113,23 +113,6 @@ export const api = {
       request<TokenResponse>('/auth/login', { method: 'POST', body: payload }),
     me: (signal?: AbortSignal) => request<User>('/auth/me', { signal }),
     logout: () => request<void>('/auth/logout', { method: 'POST' }),
-    updateProfile: (displayName: string | null) =>
-      request<User>('/auth/me', { method: 'PATCH', body: { display_name: displayName } }),
-    changeEmail: (newEmail: string, currentPassword: string) =>
-      request<User>('/auth/me/email', {
-        method: 'POST',
-        body: { new_email: newEmail, current_password: currentPassword },
-      }),
-    changePassword: (newPassword: string, currentPassword: string | null) =>
-      request<TokenResponse>('/auth/me/password', {
-        method: 'POST',
-        body: { new_password: newPassword, current_password: currentPassword },
-      }),
-    deleteAccount: (confirmEmail: string, currentPassword: string | null) =>
-      request<void>('/auth/me', {
-        method: 'DELETE',
-        body: { confirm_email: confirmEmail, current_password: currentPassword },
-      }),
     providers: (signal?: AbortSignal) =>
       request<AuthProviders>('/auth/providers', { signal }),
     google: (credential: string) =>

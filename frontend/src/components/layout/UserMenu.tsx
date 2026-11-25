@@ -1,4 +1,4 @@
-import { LogOut, Settings } from 'lucide-react'
+import { LogOut } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 
@@ -68,12 +68,6 @@ export function UserMenu() {
           ))}
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <Link to="/account">
-            <Settings aria-hidden />
-            Account settings
-          </Link>
-        </DropdownMenuItem>
         <DropdownMenuItem onSelect={handleSignOut}>
           <LogOut aria-hidden />
           Sign out

@@ -13,7 +13,6 @@ const DashboardPage = named(() => import('@/pages/DashboardPage'), 'DashboardPag
 const StockDetailPage = named(() => import('@/pages/StockDetailPage'), 'StockDetailPage')
 const WatchlistPage = named(() => import('@/pages/WatchlistPage'), 'WatchlistPage')
 const HistoryPage = named(() => import('@/pages/HistoryPage'), 'HistoryPage')
-const AccountPage = named(() => import('@/pages/AccountPage'), 'AccountPage')
 const SignInPage = named(() => import('@/pages/SignInPage'), 'SignInPage')
 const SignUpPage = named(() => import('@/pages/SignUpPage'), 'SignUpPage')
 const GitHubCallbackPage = named(
@@ -36,7 +35,6 @@ export function App() {
             <Route path="stocks/:symbol" element={<StockDetailPage />} />
             <Route path="watchlist" element={<WatchlistPage />} />
             <Route path="history" element={<HistoryPage />} />
-            <Route path="account" element={<AccountPage />} />
           </Route>
         </Route>
         <Route path="*" element={<NotFoundPage />} />

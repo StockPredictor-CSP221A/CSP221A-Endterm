@@ -46,20 +46,11 @@ Argon2 (`pwdlib`); sessions are stateless HS256 JWT bearer tokens with `sub`
 | --- | --- | --- | --- |
 | `POST` | `/api/auth/register` | public | `{email, password, display_name?}`; password ≥ 8 chars; email lowercased; `409` if taken |
 | `POST` | `/api/auth/login` | public | `{email, password}`; `401` with a generic message on bad credentials |
-| `GET` | `/api/auth/me` | bearer | `{id, email, display_name, created_at, has_password, providers}` |
-| `PATCH` | `/api/auth/me` | bearer | `{display_name}`; blank clears it |
-| `POST` | `/api/auth/me/email` | bearer | `{new_email, current_password}`; `400` on a wrong password or a password-less account, `409` if taken |
-| `POST` | `/api/auth/me/password` | bearer | `{new_password, current_password?}`; `current_password` is required once the account has a password. Returns a new token and signs out every other session |
-| `DELETE` | `/api/auth/me` | bearer | `{confirm_email, current_password?}`; `204`. Deletes the user, their predictions, watchlist, and linked sign-ins; `400` if the email or password does not match |
+| `GET` | `/api/auth/me` | bearer | `{id, email, display_name, created_at}` |
 | `POST` | `/api/auth/logout` | public | `204`; the client discards its token |
 | `GET` | `/api/auth/providers` | public | `{google_client_id, github_client_id}`; `null` hides that button |
 | `POST` | `/api/auth/google` | public | `{credential}` from the Google button; `401` if the token is invalid |
 | `POST` | `/api/auth/github` | public | `{code, redirect_uri}` from the GitHub callback; `400` if `redirect_uri` is not an allowed origin |
-
-Wrong current passwords answer `400`, not `401`, so the frontend does not treat
-them as an expired session. Each token carries a short fingerprint of the
-password hash (`pwd` claim); changing or setting a password changes it, so older
-tokens stop working.
 
 Register and login return `{access_token, token_type: "bearer", user}`.
 Protected endpoints answer `401` with `WWW-Authenticate: Bearer` when the token

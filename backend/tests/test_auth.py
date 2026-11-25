@@ -88,17 +88,8 @@ def test_me_returns_current_user(
     res = client.get("/api/auth/me", headers=user_headers)
     assert res.status_code == 200
     body = res.json()
-    assert set(body) == {
-        "id",
-        "email",
-        "display_name",
-        "created_at",
-        "has_password",
-        "providers",
-    }
+    assert set(body) == {"id", "email", "display_name", "created_at"}
     assert body["email"] == "ada@example.com"
-    assert body["has_password"] is True
-    assert body["providers"] == []
 
 
 def test_me_requires_token(client: TestClient) -> None:
