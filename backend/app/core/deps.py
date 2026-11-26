@@ -6,7 +6,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
-from app.core.security import InvalidTokenError, decode_access_token
+from app.core.security import InvalidTokenError, decode_session, password_stamp
 from app.db.session import get_db
 from app.db_models.user import User
 
@@ -33,7 +33,7 @@ def get_current_user(
         raise _unauthorized("Not authenticated")
 
     try:
-        user_id = decode_access_token(credentials.credentials)
+        user_id, stamp = decode_session(credentials.credentials)
     except InvalidTokenError as exc:
         raise _unauthorized("Invalid or expired token") from exc
 
@@ -46,7 +46,7 @@ def get_current_user(
             detail="Database unavailable",
         ) from exc
 
-    if user is None:
+    if user is None or stamp != password_stamp(user.hashed_password):
         raise _unauthorized("Invalid or expired token")
     return user
 
