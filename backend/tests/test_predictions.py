@@ -77,10 +77,20 @@ def test_history_limit_is_bounded(
     assert res.status_code == 422
 
 
-def test_history_rejects_unsupported_symbol(
+def test_history_accepts_well_formed_symbol_filter(
     client: TestClient, user_headers: dict[str, str]
 ) -> None:
     res = client.get("/api/predictions?symbol=AAPL", headers=user_headers)
+    assert res.status_code == 200
+    assert res.json() == []
+
+
+def test_history_rejects_malformed_symbol(
+    client: TestClient, user_headers: dict[str, str]
+) -> None:
+    res = client.get(
+        "/api/predictions?symbol=not%20a%20symbol", headers=user_headers
+    )
     assert res.status_code == 404
 
 

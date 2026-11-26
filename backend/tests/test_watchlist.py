@@ -1,5 +1,7 @@
 from fastapi.testclient import TestClient
 
+from app.services import market_data
+
 from .conftest import auth_headers, register
 
 
@@ -52,11 +54,19 @@ def test_watchlist_is_per_user(client: TestClient) -> None:
     assert len(client.get("/api/watchlist", headers=ada).json()) == 1
 
 
-def test_watchlist_rejects_unsupported_symbol(
-    client: TestClient, user_headers: dict[str, str]
+def test_watchlist_accepts_custom_and_deletes_unwatched(
+    client: TestClient, user_headers: dict[str, str], monkeypatch
 ) -> None:
-    assert client.post("/api/watchlist/AAPL", headers=user_headers).status_code == 404
-    assert client.delete("/api/watchlist/AAPL", headers=user_headers).status_code == 404
+    monkeypatch.setattr(
+        market_data, "lookup_watchlist_symbol", lambda symbol: "Apple Inc."
+    )
+    added = client.post("/api/watchlist/AAPL", headers=user_headers)
+    assert added.status_code == 200
+    assert added.json()["symbol"] == "AAPL"
+    assert added.json()["name"] == "Apple Inc."
+
+    assert client.delete("/api/watchlist/AAPL", headers=user_headers).status_code == 204
+    assert client.delete("/api/watchlist/AAPL", headers=user_headers).status_code == 204
 
 
 def test_watchlist_requires_auth(client: TestClient) -> None:
