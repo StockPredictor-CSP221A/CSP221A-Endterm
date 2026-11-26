@@ -1,6 +1,7 @@
-import { Search } from 'lucide-react'
+import { Plus, Search } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
 
 import { RoleBadge } from '@/components/stocks/RoleBadge'
 import { Button } from '@/components/ui/button'
@@ -14,13 +15,33 @@ import {
   CommandList,
   CommandSeparator,
 } from '@/components/ui/command'
-import { STOCKS } from '@/data/stocks'
+import { STOCKS, normalizeTicker } from '@/data/stocks'
+import { useAddStock, useWatchlist } from '@/hooks/useWatchlist'
+
+import { errorText } from '@/services/api'
 
 import { NAV_ITEMS } from './nav'
 
 export function CommandMenu() {
   const [open, setOpen] = useState(false)
+  const [search, setSearch] = useState('')
   const navigate = useNavigate()
+  const watchlist = useWatchlist()
+  const addStock = useAddStock()
+
+  const added = (watchlist.data ?? []).filter((entry) => !entry.is_default)
+  const stocks = [...STOCKS, ...added]
+  const ticker = normalizeTicker(search)
+  const canAdd = ticker !== null && !stocks.some((stock) => stock.symbol === ticker)
+
+  function addAndOpen(symbol: string) {
+    setOpen(false)
+    addStock.mutate(symbol, {
+      onSuccess: (entry) => navigate(`/stocks/${entry.symbol}`),
+      onError: (error) =>
+        toast.error(`Could not add ${symbol}`, { description: errorText(error) }),
+    })
+  }
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -55,16 +76,36 @@ export function CommandMenu() {
       </Button>
       <CommandDialog
         open={open}
-        onOpenChange={setOpen}
+        onOpenChange={(next) => {
+          setOpen(next)
+          if (!next) setSearch('')
+        }}
         title="Search stocks"
-        description="Jump to SPY, NVDA, or KO, or to a page."
+        description="Jump to a stock on your watchlist or a page, or add a new ticker."
       >
         <Command>
-          <CommandInput placeholder="Search SPY, NVDA, KO…" />
+          <CommandInput
+            placeholder="Search stocks or type a ticker to add…"
+            value={search}
+            onValueChange={setSearch}
+          />
           <CommandList>
-            <CommandEmpty>Only SPY, NVDA, and KO are supported.</CommandEmpty>
+            <CommandEmpty>No matches. Type a ticker like AAPL to add it.</CommandEmpty>
+            {canAdd && (
+              <CommandGroup heading="Add">
+                <CommandItem
+                  forceMount
+                  value={`add ${ticker}`}
+                  onSelect={() => addAndOpen(ticker)}
+                  className="gap-3 py-2"
+                >
+                  <Plus aria-hidden />
+                  Add <span className="font-semibold">{ticker}</span> to watchlist
+                </CommandItem>
+              </CommandGroup>
+            )}
             <CommandGroup heading="Stocks">
-              {STOCKS.map((stock) => (
+              {stocks.map((stock) => (
                 <CommandItem
                   key={stock.symbol}
                   value={`${stock.symbol} ${stock.name}`}

@@ -1,4 +1,4 @@
-import { Activity, ShieldCheck, Umbrella, type LucideIcon } from 'lucide-react'
+import { Activity, BookmarkPlus, ShieldCheck, Umbrella, type LucideIcon } from 'lucide-react'
 
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
@@ -8,6 +8,7 @@ const ROLE_ICONS: Record<StockRole, LucideIcon> = {
   Safe: ShieldCheck,
   Volatile: Activity,
   Defensive: Umbrella,
+  Custom: BookmarkPlus,
 }
 
 export function RoleBadge({ role, className }: { role: StockRole; className?: string }) {
