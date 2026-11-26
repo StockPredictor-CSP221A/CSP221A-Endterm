@@ -1,0 +1,58 @@
+name: Docker Build Check
+
+# Builds the development images without pushing, so a broken Dockerfile or
+# build context fails on the pull request instead of after merging to dev.
+# The ML image is not built here because torch/TimesFM make it very slow; it
+# is published by the manual Publish Dev Images workflow instead.
+on:
+  pull_request:
+    branches: [dev, main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build ${{ matrix.name }} dev image
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: backend
+            context: ./backend
+            file: ./backend/Dockerfile.dev
+            cache_scope: backend-dev
+          - name: frontend
+            context: ./frontend
+            file: ./frontend/Dockerfile.dev
+            cache_scope: frontend-dev
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.file }}
+          push: false
+          load: false
+          cache-from: type=gha,scope=${{ matrix.cache_scope }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.cache_scope }}
+
+  compose:
+    name: Validate compose.yaml
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v4
+
+      - name: Validate Compose file
+        run: docker compose config -q
