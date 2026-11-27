@@ -192,6 +192,10 @@ workflow below. The frontend is a Vite SPA on Vercel with
 `VITE_API_BASE` pointing at the Modal endpoint; `frontend/vercel.json` rewrites
 all paths to `index.html` so client routes load directly.
 
+Hugging Face Docker Spaces now return `402 Payment Required` on free accounts,
+and free ZeroGPU Spaces require an account at least 30 days old, so Modal is the
+free backend host. `backend/Dockerfile` is kept for local or alternate hosts.
+
 ### Backend CI/CD
 
 Pull requests to `dev` or `main` run the **PR Pipeline** (frontend lint, backend
@@ -226,11 +230,12 @@ modal app rollover stock-predictor-api   # after changing a secret
 
 ### Frontend deployment (Vercel Git integration)
 
-<!-- TODO(devops): describe the Vercel Git integration setup here. -->
-
-Hugging Face Docker Spaces now return `402 Payment Required` on free accounts,
-and free ZeroGPU Spaces require an account at least 30 days old, so Modal is the
-free backend host. `backend/Dockerfile` is kept for local or alternate hosts.
+Vercel's GitHub integration watches two branches: `dev` and `main`. A push to
+either branch triggers the Vercel application within the repo, deploying the
+backend to their respective environments. Both environments are set up to use
+their respective backend counterparts as well, via two instances of
+`VITE_API_BASE` pointing to each. A push to `main` deploys to production,
+a push to `dev` deploys to preview.
 
 ## Benchmark
 
