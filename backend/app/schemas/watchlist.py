@@ -5,3 +5,4 @@ from app.schemas.stock import StockInfo
 
 class WatchlistEntry(StockInfo):
     added_at: datetime
+    is_default: bool
