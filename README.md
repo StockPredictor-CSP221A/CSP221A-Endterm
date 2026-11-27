@@ -1,13 +1,14 @@
 # PrognoStock
 
 A stock-tracking web app with a next-day closing-price forecast from Google
-TimesFM 2.5 for `SPY`, `NVDA`, and `KO`. Users sign in with email and password to
-run forecasts, keep a forecast history, and maintain a watchlist.
+TimesFM 2.5. `SPY`, `NVDA`, and `KO` are built in, and users can add up to 20
+other tickers to their watchlist. Users sign in with email and password, Google,
+or GitHub to run forecasts, keep a forecast history, and maintain a watchlist.
 
 - **Frontend:** React 19 + TypeScript + Vite, Tailwind CSS v4, shadcn/ui,
   React Router, TanStack Query, Recharts
 - **Backend:** Python + FastAPI, Pydantic, SQLAlchemy 2 (PostgreSQL), Alembic,
-  JWT bearer auth with Argon2 password hashes
+  JWT bearer auth with Argon2 password hashes, Google and GitHub sign-in
 - **Market data:** `yfinance`
 - **Model:** Google TimesFM 2.5 (live); benchmarked against Chronos-2 and a naive
   baseline; see the benchmark section below
@@ -19,8 +20,25 @@ financial advice.
 
 ```text
 ├── frontend/   # Vite + React + TypeScript SPA
-└── backend/    # FastAPI app (routes, services, ml, db, schemas)
+├── backend/    # FastAPI app (routes, services, ml, db, schemas)
+└── docs/       # architecture diagram and ERD
 ```
+
+## Architecture
+
+![PrognoStock architecture: browser, Vercel SPA, FastAPI on Modal, yfinance, TimesFM and Neon PostgreSQL, plus the CI/CD pipeline](docs/architecture.png)
+
+Only the backend talks to the database, yfinance and the model; the browser
+never does.
+
+### Data model
+
+![PrognoStock ERD: users, oauth_accounts, watchlist_items and predictions](docs/erd.png)
+
+Deleting a user also deletes their `oauth_accounts` and `watchlist_items` rows.
+Their `predictions` rows stay, with `user_id` set to `NULL`.
+
+Editable source for both diagrams: [Figma](https://www.figma.com/design/VxUCFWIjAl3zIIZOnynrSn/Architecture_Diagram?node-id=0-1).
 
 ## Backend
 
@@ -44,26 +62,37 @@ Endpoints (all JSON; errors use FastAPI's `{"detail": ...}`):
 | GET | `/api/health/db` | public | checks the configured PostgreSQL (Neon) connection |
 | POST | `/api/auth/register` | public | `{email, password, display_name?}`; `409` on duplicate email |
 | POST | `/api/auth/login` | public | `{email, password}`; `401` on bad credentials |
+| GET | `/api/auth/providers` | public | Google / GitHub client IDs; `null` hides that button |
+| POST | `/api/auth/google` | public | `{credential}` from Google Identity Services; returns our JWT |
+| POST | `/api/auth/github` | public | `{code, redirect_uri}` from the GitHub OAuth redirect; returns our JWT |
 | GET | `/api/auth/me` | bearer | current user |
+| PATCH | `/api/auth/me` | bearer | `{display_name}` |
+| POST | `/api/auth/me/email` | bearer | `{new_email, current_password}`; needs a password on the account |
+| POST | `/api/auth/me/password` | bearer | `{current_password?, new_password}`; sets or changes the password, returns a new JWT |
+| DELETE | `/api/auth/me` | bearer | `{confirm_email, current_password?}`; `204`, deletes the account |
 | POST | `/api/auth/logout` | public | `204`; tokens are stateless |
-| GET | `/api/stocks` | bearer | the fixed SPY/NVDA/KO universe |
+| GET | `/api/stocks` | bearer | the built-in SPY/NVDA/KO universe |
 | GET | `/api/stocks/{symbol}/history?period=1y` | bearer | daily closes via yfinance |
 | POST | `/api/stocks/{symbol}/predict` | bearer | TimesFM one-day forecast, saved for the user |
 | GET | `/api/stocks/{symbol}/news?limit=4` | bearer | yfinance headlines; `[]` when unavailable |
 | GET | `/api/predictions?symbol=&limit=20` | bearer | the user's saved forecasts, newest first |
-| GET | `/api/watchlist` | bearer | the user's watched symbols |
-| POST / DELETE | `/api/watchlist/{symbol}` | bearer | idempotent add / remove |
+| GET | `/api/watchlist?q=` | bearer | the user's watched symbols, searchable by symbol or name |
+| POST / DELETE | `/api/watchlist/{symbol}` | bearer | idempotent add / remove; any real ticker, up to 20 added stocks (`409` past that) |
 
-Symbols outside `SPY`, `NVDA`, `KO` return `404`; missing or invalid tokens
-return `401`; provider/model failures `502`; database failures `503`.
+The stock routes accept `SPY`, `NVDA`, `KO`, or any ticker on the user's
+watchlist; other symbols return `404`. Missing or invalid tokens return `401`;
+provider/model failures `502`; database failures `503`.
 
 Environment (`backend/.env.example`): `DATABASE_URL`, `CORS_ORIGINS`,
 `JWT_SECRET` (required for any shared deployment), `JWT_ALGORITHM` (`HS256`),
-`ACCESS_TOKEN_EXPIRE_MINUTES` (`10080`, 7 days).
+`ACCESS_TOKEN_EXPIRE_MINUTES` (`10080`, 7 days). Social sign-in is optional:
+`GOOGLE_CLIENT_ID`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` (leave one blank
+to hide its button; GitHub's callback URL is `<frontend origin>/auth/github/callback`).
 
 Migrations: `uv run alembic upgrade head` (requires a reachable PostgreSQL).
 `0001` predictions, `0002` users, `0003` `predictions.user_id` (nullable,
-existing rows kept), `0004` watchlist items.
+existing rows kept), `0004` watchlist items, `0005` OAuth accounts, `0006`
+`watchlist_items.name`.
 
 ## Frontend
 
@@ -81,15 +110,18 @@ Routes:
 
 | Path | Page |
 | --- | --- |
-| `/sign-in`, `/sign-up` | split-screen auth forms (signed-in users are redirected) |
+| `/sign-in`, `/sign-up` | split-screen auth forms with Google and GitHub buttons (signed-in users are redirected) |
+| `/auth/github/callback` | finishes GitHub sign-in |
 | `/` | dashboard: market snapshot, three stock cards, recent forecasts, watchlist, model performance, headlines |
 | `/stocks/:symbol` | price chart (1M–5Y), stats, forecast card, symbol history and headlines |
 | `/watchlist` | starred stocks |
 | `/history` | all saved forecasts with a symbol filter |
+| `/account` | display name, email, password, and account deletion |
 
 Every app route requires sign-in; unauthenticated visitors go to `/sign-in` and
-return to the page they asked for. The UI is limited to `SPY`, `NVDA`, and `KO`
-and keeps the SPY benchmark with the naive-vs-TimesFM trade-off visible.
+return to the page they asked for. The UI shows `SPY`, `NVDA`, and `KO` plus any
+ticker the user adds, and keeps the SPY benchmark with the naive-vs-TimesFM
+trade-off visible.
 
 ## Docker development images
 
@@ -136,13 +168,13 @@ them (the ML image is not built there).
 
 | Layer | Service | URL |
 | --- | --- | --- |
-| Frontend | Vercel Hobby | <https://stock-predictor-omega-five.vercel.app> |
-| Backend | Modal Starter | <https://mikledez--stock-predictor-api-fastapi-app.us-east.modal.run> |
+| Frontend | Vercel Hobby | <https://csp-221-a-endterm.vercel.app> |
+| Backend | Modal Starter | <https://sasvestil--stock-predictor-api-fastapi-app.us-east.modal.run> |
 | Database | Neon Free | pooled PostgreSQL |
 
 ```bash
 # Live checks (stock endpoints need a token from /api/auth/login)
-API=https://mikledez--stock-predictor-api-fastapi-app.us-east.modal.run/api
+API=https://sasvestil--stock-predictor-api-fastapi-app.us-east.modal.run/api
 curl $API/health
 curl $API/health/db
 curl -H "Authorization: Bearer $TOKEN" "$API/stocks/NVDA/history?period=1mo"
@@ -154,44 +186,56 @@ are about 7 s. Model weights are cached in the `stock-predictor-hf-cache` Modal
 Volume.
 
 The backend is `backend/modal_app.py` (FastAPI ASGI). The Modal secret
-`stock-predictor-api` holds `DATABASE_URL`, `CORS_ORIGINS`, and `JWT_SECRET`.
-Apply migrations to Neon (`uv run alembic upgrade head`) before deploying a
-backend that includes auth. The frontend is a Vite SPA on Vercel with
+`stock-predictor-api` holds `DATABASE_URL`, `CORS_ORIGINS`, `JWT_SECRET`, and
+the Google/GitHub sign-in settings. Migrations run automatically in the deploy
+workflow below. The frontend is a Vite SPA on Vercel with
 `VITE_API_BASE` pointing at the Modal endpoint; `frontend/vercel.json` rewrites
 all paths to `index.html` so client routes load directly.
-
-```bash
-# Backend deploy
-cd backend
-modal secret create stock-predictor-api --force \
-  DATABASE_URL='postgresql+psycopg://...neon.tech/neondb?sslmode=require' \
-  'CORS_ORIGINS=["https://stock-predictor-omega-five.vercel.app"]' \
-  JWT_SECRET='<long random string>'
-modal deploy modal_app.py
-modal app rollover stock-predictor-api   # after changing a secret
-
-# Frontend deploy (from repo root; Vercel Root Directory is frontend)
-cd <repo-root>
-VERCEL_ORG_ID=team_EaEujHq5CUZvuHjXAzEEXjap \
-VERCEL_PROJECT_ID=prj_xhcxU3f4Av5NesiNEqcNSr3poErr \
-vercel --prod --yes
-```
-
-Frontend pushes to `main` or `feature/benchmarking` deploy through
-`.github/workflows/deploy-frontend.yml`. Add a `VERCEL_TOKEN` repository secret
-(token scoped to the `mikkel13` Vercel team). The Vercel GitHub App is not
-installed on the `StockPredictor-CSP221A` org, so the project uses GitHub Actions
-instead of native Git integration. Run Vercel commands from the repo root; the
-project Root Directory is `frontend`.
 
 Hugging Face Docker Spaces now return `402 Payment Required` on free accounts,
 and free ZeroGPU Spaces require an account at least 30 days old, so Modal is the
 free backend host. `backend/Dockerfile` is kept for local or alternate hosts.
-CI runs backend tests and the frontend build; the deploy workflows use
-`MODAL_TOKEN_ID`/`MODAL_TOKEN_SECRET` and `VERCEL_TOKEN` repository secrets.
 
-The `predictions` migration is applied to Neon, and `/predict` persists each
-forecast.
+### Backend CI/CD
+
+Pull requests to `dev` or `main` run the **PR Pipeline** (frontend lint, backend
+`ruff` and `pytest`) and the **Docker Build Check**, and the Semgrep GitHub app
+runs a **Semgrep Cloud** scan (`semgrep-cloud-platform/scan`; configured in
+Semgrep Cloud, not in this repo). A push to `dev` or `main`
+runs **Backend Deployment** (`.github/workflows/ci_production_deploy.yml`):
+
+1. checks there is a single Alembic head, then runs `alembic upgrade head`
+   against that environment's database (`MIGRATION_DATABASE_URL`);
+2. `modal deploy modal_app.py` to the Modal `preview` environment (from `dev`) or
+   `main` environment (production, from `main`);
+3. waits for `/api/health`, then runs `scripts/smoke.sh` against the new
+   deployment;
+4. if any step fails, rolls the app back with `modal app rollback`.
+
+Repository/environment secrets: `MODAL_TOKEN_ID`, `MODAL_TOKEN_SECRET`,
+`MIGRATION_DATABASE_URL`, `SMOKE_EMAIL`, `SMOKE_PASSWORD`.
+
+Manual backend deploy (for a first-time setup or a changed secret):
+
+```bash
+cd backend
+modal secret create stock-predictor-api --force \
+  DATABASE_URL='postgresql+psycopg://...neon.tech/neondb?sslmode=require' \
+  'CORS_ORIGINS=["https://csp-221-a-endterm.vercel.app"]' \
+  JWT_SECRET='<long random string>' \
+  GOOGLE_CLIENT_ID='...' GITHUB_CLIENT_ID='...' GITHUB_CLIENT_SECRET='...'
+modal deploy modal_app.py
+modal app rollover stock-predictor-api   # after changing a secret
+```
+
+### Frontend deployment (Vercel Git integration)
+
+Vercel's GitHub integration watches two branches: `dev` and `main`. A push to
+either branch triggers the Vercel application within the repo, deploying the
+backend to their respective environments. Both environments are set up to use
+their respective backend counterparts as well, via two instances of
+`VITE_API_BASE` pointing to each. A push to `main` deploys to production,
+a push to `dev` deploys to preview.
 
 ## Benchmark
 
