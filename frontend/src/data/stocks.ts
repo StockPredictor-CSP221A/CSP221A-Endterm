@@ -14,3 +14,15 @@ export const STOCK_SYMBOLS: readonly StockSymbol[] = STOCKS.map((stock) => stock
 export function isStockSymbol(value: string | undefined): value is StockSymbol {
   return value !== undefined && (STOCK_SYMBOLS as readonly string[]).includes(value)
 }
+
+/** Mirrors the backend's ticker format check (app/services/market_data.py). */
+const TICKER_PATTERN = /^[A-Z][A-Z0-9.-]{0,9}$/
+
+/** Uppercases and trims a ticker, or returns null when it cannot be a valid symbol. */
+export function normalizeTicker(value: string | undefined): string | null {
+  const cleaned = value?.trim().toUpperCase() ?? ''
+  return TICKER_PATTERN.test(cleaned) ? cleaned : null
+}
+
+/** Most tickers a user can add on top of the default three (backend MAX_ADDED_STOCKS). */
+export const MAX_ADDED_STOCKS = 20

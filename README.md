@@ -19,8 +19,7 @@ financial advice.
 
 ```text
 ├── frontend/   # Vite + React + TypeScript SPA
-├── backend/    # FastAPI app (routes, services, ml, db, schemas)
-└── opencode.md # project brief, decisions, and deployment plan
+└── backend/    # FastAPI app (routes, services, ml, db, schemas)
 ```
 
 ## Backend
@@ -192,7 +191,7 @@ CI runs backend tests and the frontend build; the deploy workflows use
 `MODAL_TOKEN_ID`/`MODAL_TOKEN_SECRET` and `VERCEL_TOKEN` repository secrets.
 
 The `predictions` migration is applied to Neon, and `/predict` persists each
-forecast. Full limits and the CORS loop are in `opencode.md` Section 15.
+forecast.
 
 ## Benchmark
 

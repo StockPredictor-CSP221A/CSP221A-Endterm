@@ -33,3 +33,6 @@ dist/
 
 # Internal handoff doc
 stock_predictor_handoff.md
+
+# Local agent notes
+opencode.md

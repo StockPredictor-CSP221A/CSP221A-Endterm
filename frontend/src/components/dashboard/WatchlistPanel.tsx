@@ -1,10 +1,11 @@
-import { ArrowRight, Star } from 'lucide-react'
+import { ArrowRight, Plus, Star } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 import { DeltaBadge } from '@/components/common/DeltaBadge'
 import { EmptyState } from '@/components/common/EmptyState'
 import { ErrorState } from '@/components/common/ErrorState'
 import { TableSkeleton } from '@/components/common/PageSkeleton'
+import { AddStockDialog } from '@/components/stocks/AddStockDialog'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { useWatchlist } from '@/hooks/useWatchlist'
@@ -24,14 +25,24 @@ export function WatchlistPanel({ summaries }: WatchlistPanelProps) {
     <Card className="gap-0 p-0">
       <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
         <h2 className="text-base font-semibold">Watchlist</h2>
-        {watchlist.data && watchlist.data.length > 0 && (
-          <Button asChild variant="ghost" size="sm" className="text-muted-foreground">
-            <Link to="/watchlist">
-              Open
-              <ArrowRight aria-hidden data-icon="inline-end" />
-            </Link>
-          </Button>
-        )}
+        <div className="flex items-center gap-1">
+          <AddStockDialog
+            trigger={
+              <Button variant="ghost" size="sm" className="text-muted-foreground">
+                <Plus aria-hidden data-icon="inline-start" />
+                Add
+              </Button>
+            }
+          />
+          {watchlist.data && watchlist.data.length > 0 && (
+            <Button asChild variant="ghost" size="sm" className="text-muted-foreground">
+              <Link to="/watchlist">
+                Open
+                <ArrowRight aria-hidden data-icon="inline-end" />
+              </Link>
+            </Button>
+          )}
+        </div>
       </div>
 
       {watchlist.isPending && (
@@ -54,7 +65,7 @@ export function WatchlistPanel({ summaries }: WatchlistPanelProps) {
           <EmptyState
             icon={Star}
             title="Nothing starred yet"
-            description="Use the star on a stock card to follow it here."
+            description="Star a stock card or add any ticker to follow it here."
             className="py-8"
           />
         </div>
