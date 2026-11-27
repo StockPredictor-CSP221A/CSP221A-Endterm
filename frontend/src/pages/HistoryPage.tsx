@@ -9,8 +9,9 @@ import { PredictionHistoryTable } from '@/components/forecast/PredictionHistoryT
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { STOCK_SYMBOLS, isStockSymbol } from '@/data/stocks'
+import { STOCK_SYMBOLS, normalizeTicker } from '@/data/stocks'
 import { usePredictions } from '@/hooks/usePredictions'
+import { useWatchlist } from '@/hooks/useWatchlist'
 import { errorText } from '@/services/api'
 import { usePageTitle } from '@/hooks/usePageTitle'
 
@@ -20,8 +21,16 @@ const LIMIT = 100
 export function HistoryPage() {
   usePageTitle('Forecast history')
   const [searchParams, setSearchParams] = useSearchParams()
-  const param = searchParams.get('symbol')?.toUpperCase()
-  const symbol = isStockSymbol(param) ? param : undefined
+  const symbol = normalizeTicker(searchParams.get('symbol') ?? undefined) ?? undefined
+  const watchlist = useWatchlist()
+  // Defaults, then added stocks, plus the active filter if it was removed from the watchlist.
+  const filters = [
+    ...new Set([
+      ...STOCK_SYMBOLS,
+      ...(watchlist.data ?? []).filter((entry) => !entry.is_default).map((entry) => entry.symbol),
+      ...(symbol ? [symbol] : []),
+    ]),
+  ]
   const predictions = usePredictions({ symbol, limit: LIMIT })
 
   function setFilter(value: string) {
@@ -38,12 +47,12 @@ export function HistoryPage() {
 
       <Card className="gap-0 p-0">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4">
-          <Tabs value={symbol ?? ALL} onValueChange={setFilter}>
+          <Tabs value={symbol ?? ALL} onValueChange={setFilter} className="max-w-full overflow-x-auto">
             <TabsList aria-label="Filter by symbol" className="h-9">
               <TabsTrigger value={ALL} className="px-3 text-xs">
                 All
               </TabsTrigger>
-              {STOCK_SYMBOLS.map((item) => (
+              {filters.map((item) => (
                 <TabsTrigger
                   key={item}
                   value={item}

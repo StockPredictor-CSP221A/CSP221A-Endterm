@@ -19,8 +19,7 @@ financial advice.
 
 ```text
 ├── frontend/   # Vite + React + TypeScript SPA
-├── backend/    # FastAPI app (routes, services, ml, db, schemas)
-└── opencode.md # project brief, decisions, and deployment plan
+└── backend/    # FastAPI app (routes, services, ml, db, schemas)
 ```
 
 ## Backend
@@ -92,6 +91,47 @@ Every app route requires sign-in; unauthenticated visitors go to `/sign-in` and
 return to the page they asked for. The UI is limited to `SPY`, `NVDA`, and `KO`
 and keeps the SPY benchmark with the naive-vs-TimesFM trade-off visible.
 
+## Docker development images
+
+The `Publish Dev Images` workflow (`.github/workflows/publish_dev_images.yml`)
+publishes public images to GitHub Container Registry:
+
+| Image | Published | Contents |
+| --- | --- | --- |
+| `ghcr.io/stockpredictor-csp221a/csp221a-endterm/backend:dev` | every push to `dev` | FastAPI + dev deps, no ML extra |
+| `ghcr.io/stockpredictor-csp221a/csp221a-endterm/frontend:dev` | every push to `dev` | Vite dev server |
+| `ghcr.io/stockpredictor-csp221a/csp221a-endterm/backend:dev-ml` | manual workflow run | backend + torch/TimesFM |
+
+Each build is also tagged with the short commit SHA (`dev-<sha>`,
+`dev-ml-<sha>`) so a merge can be pinned for debugging. To publish the ML
+image, run **Publish Dev Images** from the Actions tab (`workflow_dispatch`);
+tick `publish_dev` if the standard images should be refreshed too.
+
+First-time setup: run the workflow once, then set each package's visibility to
+public under **Packages** in the repository or organization settings. If the
+organization restricts package creation, allow GitHub Actions to write
+packages.
+
+```bash
+docker compose pull   # latest :dev images
+docker compose up     # db on 5432, API on 8000, Vite on 5173
+```
+
+The backend source is bind-mounted for reload and `alembic upgrade head` runs
+on start. After changing `backend/pyproject.toml`, rebuild with
+`docker compose build backend` and start with `docker compose up --pull never`
+to use the local build. For forecast support, publish `:dev-ml` manually and
+run the stack with `BACKEND_TAG=dev-ml docker compose up` (PowerShell:
+`$env:BACKEND_TAG='dev-ml'; docker compose up`), or build locally with
+`docker compose build --build-arg INCLUDE_ML=true backend`. If Vite does not
+pick up edits on Windows, add `CHOKIDAR_USEPOLLING: "1"` to the frontend
+environment.
+
+Only the development (Vite) frontend image is published; production still uses
+Vercel. Pull requests to `dev` or `main` run the
+`Docker Build Check` workflow, which builds both dev images without pushing
+them (the ML image is not built there).
+
 ## Deployment (live, free tier)
 
 | Layer | Service | URL |
@@ -151,7 +191,7 @@ CI runs backend tests and the frontend build; the deploy workflows use
 `MODAL_TOKEN_ID`/`MODAL_TOKEN_SECRET` and `VERCEL_TOKEN` repository secrets.
 
 The `predictions` migration is applied to Neon, and `/predict` persists each
-forecast. Full limits and the CORS loop are in `opencode.md` Section 15.
+forecast.
 
 ## Benchmark
 

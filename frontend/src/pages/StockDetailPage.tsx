@@ -1,9 +1,10 @@
-import { SearchX, Sparkles } from 'lucide-react'
+import { Plus, SearchX, Sparkles, Star } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 
 import { EmptyState } from '@/components/common/EmptyState'
 import { ErrorState } from '@/components/common/ErrorState'
+import { PageSkeleton } from '@/components/common/PageSkeleton'
 import { ForecastCard } from '@/components/forecast/ForecastCard'
 import { RecentPredictions } from '@/components/forecast/RecentPredictions'
 import { StockNews } from '@/components/news/StockNews'
@@ -16,24 +17,28 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { PERIODS, type Period } from '@/data/periods'
-import { STOCKS, isStockSymbol, type StockSymbol } from '@/data/stocks'
+import { STOCKS, isStockSymbol, normalizeTicker } from '@/data/stocks'
 import { useForecast } from '@/hooks/useForecast'
 import { useStockHistory, useStocks } from '@/hooks/useStocks'
+import { useAddStock, useWatchlist } from '@/hooks/useWatchlist'
 import { summarizeHistory } from '@/lib/history'
 import { errorText } from '@/services/api'
 import { usePageTitle } from '@/hooks/usePageTitle'
+import type { StockInfo } from '@/types'
 
 export function StockDetailPage() {
   const { symbol } = useParams()
-  const normalized = symbol?.toUpperCase()
-  usePageTitle(isStockSymbol(normalized) ? normalized : 'Unsupported symbol')
+  const normalized = normalizeTicker(symbol)
+  const watchlist = useWatchlist()
+  const entry = watchlist.data?.find((item) => item.symbol === normalized)
+  usePageTitle(normalized ?? 'Unknown symbol')
 
-  if (!isStockSymbol(normalized)) {
+  if (!normalized) {
     return (
       <EmptyState
         icon={SearchX}
-        title={`${symbol ?? 'This symbol'} is not supported`}
-        description="This app forecasts SPY, NVDA, and KO only."
+        title={`${symbol ?? 'This'} is not a valid ticker`}
+        description="Tickers are 1–10 letters, digits, dots, or dashes, like AAPL or BRK-B."
         action={
           <Button asChild>
             <Link to="/">Back to dashboard</Link>
@@ -44,10 +49,63 @@ export function StockDetailPage() {
     )
   }
 
-  return <StockDetail key={normalized} symbol={normalized} />
+  if (isStockSymbol(normalized)) {
+    const fallback = STOCKS.find((stock) => stock.symbol === normalized)!
+    return <StockDetail key={normalized} symbol={normalized} fallback={fallback} />
+  }
+
+  // Added tickers are only served once they are on the user's watchlist.
+  if (watchlist.isPending) return <PageSkeleton />
+  if (watchlist.isError) {
+    return (
+      <ErrorState
+        title="Could not load your watchlist"
+        message={errorText(watchlist.error)}
+        onRetry={() => void watchlist.refetch()}
+        retrying={watchlist.isFetching}
+      />
+    )
+  }
+  if (!entry) return <NotWatched key={normalized} symbol={normalized} />
+
+  return <StockDetail key={normalized} symbol={normalized} fallback={entry} />
 }
 
-function StockDetail({ symbol }: { symbol: StockSymbol }) {
+function NotWatched({ symbol }: { symbol: string }) {
+  const addStock = useAddStock()
+
+  return (
+    <EmptyState
+      icon={Star}
+      title={`${symbol} is not on your watchlist`}
+      description={
+        addStock.error
+          ? errorText(addStock.error)
+          : `Add ${symbol} to your watchlist to see its prices and news and run forecasts.`
+      }
+      action={
+        <div className="flex flex-wrap justify-center gap-2">
+          <Button onClick={() => addStock.mutate(symbol)} disabled={addStock.isPending}>
+            <Plus aria-hidden data-icon="inline-start" />
+            {addStock.isPending ? 'Checking ticker…' : `Add ${symbol}`}
+          </Button>
+          <Button asChild variant="outline">
+            <Link to="/">Back to dashboard</Link>
+          </Button>
+        </div>
+      }
+      className="py-20"
+    />
+  )
+}
+
+interface StockDetailProps {
+  symbol: string
+  /** Name and role to show before /stocks loads, or for added tickers. */
+  fallback: Pick<StockInfo, 'name' | 'role'> & { description?: string }
+}
+
+function StockDetail({ symbol, fallback }: StockDetailProps) {
   const [period, setPeriod] = useState<Period>('1y')
   const stocks = useStocks()
   const history = useStockHistory(symbol, period)
@@ -55,7 +113,6 @@ function StockDetail({ symbol }: { symbol: StockSymbol }) {
   const [searchParams, setSearchParams] = useSearchParams()
   const autoRan = useRef(false)
 
-  const fallback = STOCKS.find((stock) => stock.symbol === symbol)!
   const info = stocks.data?.find((stock) => stock.symbol === symbol)
   const summary = history.data ? summarizeHistory(history.data.prices) : null
   const periodLabel = PERIODS.find((item) => item.value === period)?.label ?? period
@@ -81,7 +138,7 @@ function StockDetail({ symbol }: { symbol: StockSymbol }) {
         symbol={symbol}
         name={info?.name ?? fallback.name}
         role={info?.role ?? fallback.role}
-        description={info?.description}
+        description={info?.description ?? fallback.description}
         summary={summary}
         actions={
           <>

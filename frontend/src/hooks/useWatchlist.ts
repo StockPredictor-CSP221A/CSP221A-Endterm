@@ -19,6 +19,12 @@ export function useIsWatched(symbol: string): boolean {
   return watchlist.data?.some((entry) => entry.symbol === symbol) ?? false
 }
 
+/** The cached watchlist entry for a symbol, if the user watches it. */
+export function useWatchlistEntry(symbol: string): WatchlistEntry | undefined {
+  const watchlist = useWatchlist()
+  return watchlist.data?.find((entry) => entry.symbol === symbol)
+}
+
 interface ToggleVariables {
   symbol: string
   watch: boolean
@@ -28,15 +34,22 @@ interface ToggleContext {
   previous: WatchlistEntry[] | undefined
 }
 
-function optimisticEntry(symbol: string, stocks: StockInfo[] | undefined): WatchlistEntry {
+function optimisticEntry(
+  symbol: string,
+  stocks: StockInfo[] | undefined,
+  previous: WatchlistEntry | undefined,
+): WatchlistEntry {
+  if (previous) return previous
   const info = stocks?.find((stock) => stock.symbol === symbol)
   const fallback = STOCKS.find((stock) => stock.symbol === symbol)
+  const isDefault = fallback !== undefined
   return {
     symbol,
     name: info?.name ?? fallback?.name ?? symbol,
-    role: info?.role ?? fallback?.role ?? 'Safe',
+    role: info?.role ?? fallback?.role ?? 'Custom',
     description: info?.description ?? '',
     added_at: new Date().toISOString(),
+    is_default: isDefault,
   }
 }
 
@@ -44,8 +57,15 @@ function universeIndex(symbol: string): number {
   return STOCK_SYMBOLS.findIndex((item) => item === symbol)
 }
 
-function sortByUniverse(entries: WatchlistEntry[]): WatchlistEntry[] {
-  return [...entries].sort((a, b) => universeIndex(a.symbol) - universeIndex(b.symbol))
+/** Same order as the API: the default three first, then added stocks oldest first. */
+function sortWatchlist(entries: WatchlistEntry[]): WatchlistEntry[] {
+  const defaults = entries
+    .filter((entry) => entry.is_default)
+    .sort((a, b) => universeIndex(a.symbol) - universeIndex(b.symbol))
+  const custom = entries
+    .filter((entry) => !entry.is_default)
+    .sort((a, b) => a.added_at.localeCompare(b.added_at))
+  return [...defaults, ...custom]
 }
 
 /** Adds or removes a symbol, updating the cached list immediately and rolling back on failure. */
@@ -61,10 +81,11 @@ export function useToggleWatchlist() {
       await queryClient.cancelQueries({ queryKey: queryKeys.watchlist })
       const previous = queryClient.getQueryData<WatchlistEntry[]>(queryKeys.watchlist)
       const stocks = queryClient.getQueryData<StockInfo[]>(queryKeys.stocks)
+      const existing = previous?.find((entry) => entry.symbol === symbol)
       const current = (previous ?? []).filter((entry) => entry.symbol !== symbol)
       queryClient.setQueryData<WatchlistEntry[]>(
         queryKeys.watchlist,
-        watch ? sortByUniverse([...current, optimisticEntry(symbol, stocks)]) : current,
+        watch ? sortWatchlist([...current, optimisticEntry(symbol, stocks, existing)]) : current,
       )
       return { previous }
     },
@@ -75,6 +96,30 @@ export function useToggleWatchlist() {
       queryClient.setQueryData(queryKeys.watchlist, context?.previous)
       toast.error(`Could not ${watch ? 'add' : 'remove'} ${symbol}`, {
         description: errorText(error),
+      })
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: queryKeys.watchlist }),
+  })
+}
+
+/**
+ * Adds any ticker. Not optimistic: the server checks the ticker has market data
+ * and looks up its name, so callers show its error inline instead of a toast.
+ */
+export function useAddStock() {
+  const queryClient = useQueryClient()
+
+  return useMutation<WatchlistEntry, Error, string>({
+    mutationFn: (symbol) => api.watchlist.add(symbol),
+    onSuccess: (entry) => {
+      queryClient.setQueryData<WatchlistEntry[]>(queryKeys.watchlist, (previous) =>
+        sortWatchlist([
+          ...(previous ?? []).filter((item) => item.symbol !== entry.symbol),
+          entry,
+        ]),
+      )
+      toast.success(`${entry.symbol} added to your watchlist`, {
+        description: entry.name !== entry.symbol ? entry.name : undefined,
       })
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey: queryKeys.watchlist }),

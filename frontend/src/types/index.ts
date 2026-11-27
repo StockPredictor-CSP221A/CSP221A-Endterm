@@ -1,4 +1,5 @@
-export type StockRole = 'Safe' | 'Volatile' | 'Defensive'
+/** Custom marks a ticker the user added to their watchlist themselves. */
+export type StockRole = 'Safe' | 'Volatile' | 'Defensive' | 'Custom'
 
 export interface StockInfo {
   symbol: string
@@ -9,6 +10,8 @@ export interface StockInfo {
 
 export interface WatchlistEntry extends StockInfo {
   added_at: string
+  /** True for SPY, NVDA, and KO; false for tickers the user added. */
+  is_default: boolean
 }
 
 export interface PricePoint {
@@ -60,6 +63,8 @@ export interface User {
   email: string
   display_name: string | null
   created_at: string
+  has_password: boolean
+  providers: Array<'google' | 'github'>
 }
 
 export interface TokenResponse {

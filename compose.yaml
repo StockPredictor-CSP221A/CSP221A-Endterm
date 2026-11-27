@@ -1,0 +1,89 @@
+# Development stack built from the images published off the dev branch.
+#
+#   docker compose pull        # get the latest :dev images
+#   docker compose up          # db + API on :8000 + Vite on :5173
+#
+# To build the images locally instead:
+#   docker compose build
+#   docker compose up --pull never
+#
+# The backend source is bind-mounted for hot reload. Dependency changes need a
+# rebuild (or `docker compose run --rm backend uv sync`). For TimesFM support,
+# run with BACKEND_TAG=dev-ml (published manually) or rebuild with
+# `docker compose build --build-arg INCLUDE_ML=true backend`.
+name: prognostock-dev
+
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: stock_predictor
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d stock_predictor"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    image: ghcr.io/stockpredictor-csp221a/csp221a-endterm/backend:${BACKEND_TAG:-dev}
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    pull_policy: always
+    environment:
+      # Local composes PostgreSQL. Environment variables override backend/.env.
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@db:5432/stock_predictor
+      CORS_ORIGINS: '["http://localhost:5173"]'
+      # Fixed local secret so hot reloads do not invalidate sessions.
+      JWT_SECRET: dev-only-not-a-secret
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - hf_cache:/home/appuser/.cache/huggingface
+    depends_on:
+      db:
+        condition: service_healthy
+    command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health')",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+
+  frontend:
+    image: ghcr.io/stockpredictor-csp221a/csp221a-endterm/frontend:dev
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    pull_policy: always
+    environment:
+      # Vite proxies /api to the backend service inside the Compose network.
+      VITE_PROXY_TARGET: http://backend:8000
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      # Keep the image's node_modules when ./frontend is bind-mounted.
+      - frontend_node_modules:/app/node_modules
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+  hf_cache:
+  frontend_node_modules:

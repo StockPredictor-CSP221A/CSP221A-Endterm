@@ -1,0 +1,17 @@
+# Development frontend image (Vite dev server with HMR).
+#
+# Run it with the source bind-mounted at /app and a volume for /app/node_modules
+# (see compose.yaml) so file edits are picked up without rebuilding.
+FROM node:24-alpine
+
+WORKDIR /app
+
+# Install dependencies first so this layer is reused when only source changes.
+COPY package.json package-lock.json ./
+RUN npm ci
+
+COPY . .
+
+EXPOSE 5173
+
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "5173"]
